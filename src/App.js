@@ -3,6 +3,7 @@ import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
 import "./App.css";
 
 const CONTRACT_ADDRESS = "0x8435b27ba6f2acdf0e7b4c552a4a2af71dd69941";
+const INR_RATE = 500000; // 1 ETH = ₹5,00,000
 
 const ABI = [
   "function joinGroup() payable",
@@ -15,7 +16,6 @@ const ABI = [
   "function remainingMonths() view returns(uint)",
   "function getPoolBalance() view returns(uint)",
   "function getPoolInINR() view returns(uint)",
-  "function getMemberShareInINR() view returns(uint)",
   "function getMembers() view returns(address[])",
   "event MemberJoined(address)",
   "event BorrowerSelected(address)",
@@ -53,6 +53,7 @@ export default function App() {
     setContract(cont);
     setAccount(await signer.getAddress());
     loadAll(cont);
+    loadHistory(cont);
   }
 
   async function loadAll(c) {
@@ -69,37 +70,93 @@ export default function App() {
       setEmi(formatEther(await c.getEMI()));
       setPool(formatEther(await c.getPoolBalance()));
     }
+  }
 
-    const events = await c.queryFilter("*", 0, "latest");
-    const logs = events.reverse().map(e => ({
-      name: e.eventName,
-      user: e.args[0],
-      value: e.args[1] ? formatEther(e.args[1]) : ""
-    }));
-    setHistory(logs);
+  async function loadHistory(c) {
+    try {
+      const joined = await c.queryFilter("MemberJoined");
+      const selected = await c.queryFilter("BorrowerSelected");
+      const released = await c.queryFilter("LoanReleased");
+      const emis = await c.queryFilter("EMIPaid");
+      const profits = await c.queryFilter("ProfitWithdrawn");
+
+      let all = [];
+
+      joined.forEach(e => all.push({
+        type: "Join Group",
+        user: e.args[0],
+        eth: "0.01",
+        inr: (0.01 * INR_RATE).toFixed(0),
+        block: e.blockNumber
+      }));
+
+      selected.forEach(e => all.push({
+        type: "Borrower Selected",
+        user: e.args[0],
+        eth: "-",
+        inr: "-",
+        block: e.blockNumber
+      }));
+
+      released.forEach(e => all.push({
+        type: "Loan Released",
+        user: e.args[0],
+        eth: formatEther(e.args[1]),
+        inr: (parseFloat(formatEther(e.args[1])) * INR_RATE).toFixed(0),
+        block: e.blockNumber
+      }));
+
+      emis.forEach(e => all.push({
+        type: `EMI Paid (Month ${e.args[2].toString()})`,
+        user: e.args[0],
+        eth: formatEther(e.args[1]),
+        inr: (parseFloat(formatEther(e.args[1])) * INR_RATE).toFixed(0),
+        block: e.blockNumber
+      }));
+
+      profits.forEach(e => all.push({
+        type: "Profit Withdrawn",
+        user: e.args[0],
+        eth: formatEther(e.args[1]),
+        inr: (parseFloat(formatEther(e.args[1])) * INR_RATE).toFixed(0),
+        block: e.blockNumber
+      }));
+
+      all.sort((a,b)=>b.block - a.block);
+      setHistory(all);
+
+    } catch (err) {
+      console.log("History error", err);
+      setHistory([]);
+    }
   }
 
   async function joinGroup() {
     await (await contract.joinGroup({ value: parseEther("0.01") })).wait();
     loadAll(contract);
+    loadHistory(contract);
   }
 
   async function selectBorrowerFunc() {
     await (await contract.selectBorrower(borrower)).wait();
+    loadHistory(contract);
   }
 
   async function releaseLoan() {
     await (await contract.releaseFunds()).wait();
+    loadHistory(contract);
   }
 
   async function payEMI() {
     const val = await contract.getEMI();
     await (await contract.payEMI({ value: val })).wait();
     loadAll(contract);
+    loadHistory(contract);
   }
 
   async function withdrawProfit() {
     await (await contract.withdrawProfit()).wait();
+    loadHistory(contract);
   }
 
   return (
@@ -153,13 +210,21 @@ export default function App() {
 
         {tab==="transactions" && (
           <div className="panel">
+            <h3>Complete On-Chain Ledger</h3>
+
             <div className="history">
-              {history.map((tx,i)=>(
-                <div key={i} className="historyRow">
-                  <b>{tx.name}</b><br/>
-                  {tx.user?.slice(0,6)}... {tx.value}
-                </div>
-              ))}
+              {history.length === 0 ? (
+                <p style={{ color: "#aaa" }}>No transactions yet</p>
+              ) : (
+                history.map((tx, i) => (
+                  <div key={i} className="historyRow">
+                    <b>{tx.type}</b><br/>
+                    User: {tx.user.slice(0,6)}...<br/>
+                    ETH: {tx.eth} <br/>
+                    INR: ₹{tx.inr}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

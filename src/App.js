@@ -106,14 +106,47 @@ export default function App() {
   }
 
   async function loadHistory(c) {
-    const events = await c.queryFilter("EMIPaid");
-    const logs = events.map(e => ({
-      borrower: e.args[0],
-      amount: formatEther(e.args[1]),
-      month: e.args[2].toString()
-    })).reverse();
-    setHistory(logs);
+    const joined = await c.queryFilter("MemberJoined");
+    const borrowerSel = await c.queryFilter("BorrowerSelected");
+    const released = await c.queryFilter("LoanReleased");
+    const emis = await c.queryFilter("EMIPaid");
+    const profits = await c.queryFilter("ProfitWithdrawn");
+  
+    let logs = [];
+  
+    joined.forEach(e => logs.push({
+      type: "Joined Group",
+      user: e.args[0],
+      info: ""
+    }));
+  
+    borrowerSel.forEach(e => logs.push({
+      type: "Borrower Selected",
+      user: e.args[0],
+      info: ""
+    }));
+  
+    released.forEach(e => logs.push({
+      type: "Loan Released",
+      user: e.args[0],
+      info: formatEther(e.args[1]) + " ETH"
+    }));
+  
+    emis.forEach(e => logs.push({
+      type: "EMI Paid (Month " + e.args[2] + ")",
+      user: e.args[0],
+      info: formatEther(e.args[1]) + " ETH"
+    }));
+  
+    profits.forEach(e => logs.push({
+      type: "Profit Withdrawn",
+      user: e.args[0],
+      info: formatEther(e.args[1]) + " ETH"
+    }));
+  
+    setHistory(logs.reverse());
   }
+  
 
   const progress = ((12 - monthsLeft) / 12) * 100;
 
@@ -179,10 +212,12 @@ export default function App() {
             <h3>On-Chain Transactions</h3>
             <div className="history">
               {history.map((tx, i) => (
-                <div key={i} className="historyRow">
-                  Month {tx.month} | EMI {tx.amount} ETH | {tx.borrower.slice(0,6)}...
-                </div>
-              ))}
+  <div key={i} className="historyRow">
+    <b>{tx.type}</b><br />
+    {tx.user.slice(0, 6)}... {tx.info}
+  </div>
+))}
+
             </div>
           </div>
         )}

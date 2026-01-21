@@ -44,7 +44,12 @@ export default function App() {
   }, []);
 
   async function connectWallet() {
+    if (!window.ethereum) {
+      alert("Please open in MetaMask browser or install MetaMask.");
+      return;
+    }
     const prov = new BrowserProvider(window.ethereum);
+    
     const sign = await prov.getSigner();
     const addr = await sign.getAddress();
     const cont = new Contract(CONTRACT_ADDRESS, ABI, sign);

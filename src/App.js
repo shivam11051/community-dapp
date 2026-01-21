@@ -1,53 +1,68 @@
 import { useState, useEffect } from "react";
-import { BrowserProvider, Contract, parseEther, formatEther } from "ethers";
+import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
 import "./App.css";
 
-const contractAddress = "0x71853fa575b4eeb88fa473d14bf3f49ca0065180";
+const CONTRACT_ADDRESS = "0xaa59665be7ef152080d474293ce112292a4f0515";
 
-const abi = [
+const ABI = [
   "function joinGroup() payable",
   "function selectBorrower(address)",
   "function releaseFunds()",
   "function payEMI() payable",
   "function withdrawProfit()",
   "function getEMI() view returns(uint)",
+  "function remainingMonths() view returns(uint)",
   "function getPoolBalance() view returns(uint)",
   "function getMembers() view returns(address[])",
-  "function borrower() view returns(address)",
-  "function remainingMonths() view returns(uint)"
+  "event MemberJoined(address)",
+  "event BorrowerSelected(address)",
+  "event LoanReleased(address,uint)",
+  "event EMIPaid(address,uint,uint)",
+  "event ProfitWithdrawn(address,uint)"
 ];
 
 export default function App() {
-  const [account, setAccount] = useState("");
+  const [provider, setProvider] = useState(null);
+  const [signer, setSigner] = useState(null);
   const [contract, setContract] = useState(null);
+  const [account, setAccount] = useState("");
   const [tab, setTab] = useState("overview");
-  const [borrower, setBorrower] = useState("");
-  const [emi, setEmi] = useState("");
-  const [pool, setPool] = useState("");
-  const [members, setMembers] = useState([]);
-  const [monthsLeft, setMonthsLeft] = useState("");
 
-  // Mobile MetaMask auto open
+  const [borrower, setBorrower] = useState("");
+  const [emi, setEmi] = useState("0");
+  const [monthsLeft, setMonthsLeft] = useState(12);
+  const [pool, setPool] = useState("0");
+  const [members, setMembers] = useState([]);
+  const [history, setHistory] = useState([]);
+
+  // Mobile MetaMask deep link
   useEffect(() => {
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isMobile = /iPhone|Android/i.test(navigator.userAgent);
     if (isMobile && !window.ethereum) {
       window.location.href = "https://metamask.app.link/dapp/shivam11051.github.io/community-dapp";
     }
   }, []);
 
   async function connectWallet() {
-    const provider = new BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    const address = await signer.getAddress();
-    setAccount(address);
-    setContract(new Contract(contractAddress, abi, signer));
+    const prov = new BrowserProvider(window.ethereum);
+    const sign = await prov.getSigner();
+    const addr = await sign.getAddress();
+    const cont = new Contract(CONTRACT_ADDRESS, ABI, sign);
+
+    setProvider(prov);
+    setSigner(sign);
+    setAccount(addr);
+    setContract(cont);
+
+    loadOverview(cont);
+    loadEMI(cont);
+    loadHistory(cont);
   }
 
   async function joinGroup() {
     const tx = await contract.joinGroup({ value: parseEther("0.01") });
     await tx.wait();
-    alert("Joined Group");
-    loadOverview();
+    loadOverview(contract);
   }
 
   async function selectBorrowerFunc() {
@@ -56,7 +71,7 @@ export default function App() {
     alert("Borrower Selected");
   }
 
-  async function releaseFunds() {
+  async function releaseLoan() {
     const tx = await contract.releaseFunds();
     await tx.wait();
     alert("Loan Released");
@@ -66,35 +81,41 @@ export default function App() {
     const amount = await contract.getEMI();
     const tx = await contract.payEMI({ value: amount });
     await tx.wait();
-    alert("EMI Paid");
-    loadEMI();
+    loadEMI(contract);
+    loadHistory(contract);
   }
 
   async function withdrawProfit() {
     const tx = await contract.withdrawProfit();
     await tx.wait();
     alert("Profit Withdrawn");
-    loadProfit();
   }
 
-  async function loadOverview() {
-    const m = await contract.getMembers();
+  async function loadOverview(c) {
+    const m = await c.getMembers();
+    const p = await c.getPoolBalance();
     setMembers(m);
-    const p = await contract.getPoolBalance();
     setPool(formatEther(p));
   }
 
-  async function loadEMI() {
-    const e = await contract.getEMI();
+  async function loadEMI(c) {
+    const e = await c.getEMI();
+    const r = await c.remainingMonths();
     setEmi(formatEther(e));
-    const r = await contract.remainingMonths();
     setMonthsLeft(r.toString());
   }
 
-  async function loadProfit() {
-    const p = await contract.getPoolBalance();
-    setPool(formatEther(p));
+  async function loadHistory(c) {
+    const events = await c.queryFilter("EMIPaid");
+    const logs = events.map(e => ({
+      borrower: e.args[0],
+      amount: formatEther(e.args[1]),
+      month: e.args[2].toString()
+    })).reverse();
+    setHistory(logs);
   }
+
+  const progress = ((12 - monthsLeft) / 12) * 100;
 
   return (
     <div className="app">
@@ -106,23 +127,27 @@ export default function App() {
         <div className="wallet">{account || "Not Connected"}</div>
 
         <div className="tabs">
-          <button className={tab==="overview"?"active":""} onClick={()=>{setTab("overview"); loadOverview();}}>Overview</button>
-          <button className={tab==="emi"?"active":""} onClick={()=>{setTab("emi"); loadEMI();}}>EMI</button>
-          <button className={tab==="profit"?"active":""} onClick={()=>{setTab("profit"); loadProfit();}}>Profit</button>
+          <button className={tab==="overview"?"active":""} onClick={()=>setTab("overview")}>Overview</button>
+          <button className={tab==="emi"?"active":""} onClick={()=>setTab("emi")}>EMI</button>
+          <button className={tab==="profit"?"active":""} onClick={()=>setTab("profit")}>Profit</button>
+          <button className={tab==="transactions"?"active":""} onClick={()=>setTab("transactions")}>Transactions</button>
         </div>
 
         {tab === "overview" && (
           <div className="panel">
-            <h3>Group Status</h3>
+            <h3>Group Overview</h3>
             <p>Members Joined: {members.length}/3</p>
-            <p>Pool Balance: {pool} ETH</p>
+            <p>Total Pool: {pool} ETH</p>
             <button onClick={joinGroup}>Join Group (0.01 ETH)</button>
 
             <h3>Select Borrower</h3>
-            <input placeholder="Borrower Address" value={borrower}
-              onChange={(e)=>setBorrower(e.target.value)} />
+            <input
+              placeholder="Borrower Address"
+              value={borrower}
+              onChange={e => setBorrower(e.target.value)}
+            />
             <button onClick={selectBorrowerFunc}>Confirm Borrower</button>
-            <button onClick={releaseFunds}>Release Loan</button>
+            <button onClick={releaseLoan}>Release Loan</button>
           </div>
         )}
 
@@ -130,10 +155,12 @@ export default function App() {
           <div className="panel">
             <h3>EMI Dashboard</h3>
             <p>Monthly EMI: {emi} ETH</p>
-            <p>Remaining Months: {monthsLeft}/12</p>
+            <p>Remaining Months: {monthsLeft} / 12</p>
+
             <div className="progress">
-              <div className="bar" style={{width: `${((12-monthsLeft)/12)*100}%`}}></div>
+              <div className="bar" style={{ width: `${progress}%` }}></div>
             </div>
+
             <button onClick={payEMI}>Pay EMI</button>
           </div>
         )}
@@ -141,11 +168,25 @@ export default function App() {
         {tab === "profit" && (
           <div className="panel">
             <h3>Profit Pool</h3>
-            <p>Total Pool Balance: {pool} ETH</p>
-            <p>Your Share (after completion): {pool/3} ETH</p>
+            <p>Current Contract Balance: {pool} ETH</p>
+            <p>Estimated Share per Member: {(pool/3).toFixed(4)} ETH</p>
             <button onClick={withdrawProfit}>Withdraw Profit</button>
           </div>
         )}
+
+        {tab === "transactions" && (
+          <div className="panel">
+            <h3>On-Chain Transactions</h3>
+            <div className="history">
+              {history.map((tx, i) => (
+                <div key={i} className="historyRow">
+                  Month {tx.month} | EMI {tx.amount} ETH | {tx.borrower.slice(0,6)}...
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

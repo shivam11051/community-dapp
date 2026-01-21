@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
 import "./App.css";
 
-const CONTRACT_ADDRESS = "0x8435b27ba6f2acdf0e7b4c552a4a2af71dd69941";
+const CONTRACT_ADDRESS = "0x59dec52328a55fb8a42d8217e834a96b05207a1b";
 const INR_RATE = 500000; // 1 ETH = ₹5,00,000
 
 const ABI = [

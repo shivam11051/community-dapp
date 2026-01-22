@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
 import "./App.css";
 
-const CONTRACT_ADDRESS = "0x59dec52328a55fb8a42d8217e834a96b05207a1b";
-const INR_RATE = 500000; // 1 ETH = ₹5,00,000
+const CONTRACT_ADDRESS = "0xbbd9419c290d4befc667f7981e0112e890c28220";
+const INR_RATE = 500000;
 
 const ABI = [
   "function joinGroup() payable",
   "function selectBorrower(address)",
   "function releaseFunds()",
   "function payEMI() payable",
-  "function withdrawProfit()",
+  "function withdrawAllProfit()",
+  "function withdrawPartialProfit(uint256)",
   "function getEMI() view returns(uint)",
   "function getEMIinINR() view returns(uint)",
   "function remainingMonths() view returns(uint)",
@@ -36,6 +37,7 @@ export default function App() {
   const [pool, setPool] = useState("0");
   const [members, setMembers] = useState([]);
   const [history, setHistory] = useState([]);
+  const [withdrawAmount, setWithdrawAmount] = useState("");
 
   useEffect(() => {
     const isMobile = /iPhone|Android/i.test(navigator.userAgent);
@@ -45,7 +47,6 @@ export default function App() {
   }, []);
 
   async function connectWallet() {
-    if (!window.ethereum) return alert("Install MetaMask");
     const provider = new BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     const cont = new Contract(CONTRACT_ADDRESS, ABI, signer);
@@ -73,68 +74,27 @@ export default function App() {
   }
 
   async function loadHistory(c) {
-    try {
-      const joined = await c.queryFilter("MemberJoined");
-      const selected = await c.queryFilter("BorrowerSelected");
-      const released = await c.queryFilter("LoanReleased");
-      const emis = await c.queryFilter("EMIPaid");
-      const profits = await c.queryFilter("ProfitWithdrawn");
+    const joined = await c.queryFilter("MemberJoined");
+    const selected = await c.queryFilter("BorrowerSelected");
+    const released = await c.queryFilter("LoanReleased");
+    const emis = await c.queryFilter("EMIPaid");
+    const profits = await c.queryFilter("ProfitWithdrawn");
 
-      let all = [];
+    let all = [];
 
-      joined.forEach(e => all.push({
-        type: "Join Group",
-        user: e.args[0],
-        eth: "0.01",
-        inr: (0.01 * INR_RATE).toFixed(0),
-        block: e.blockNumber
-      }));
+    joined.forEach(e => all.push({ type:"Join", user:e.args[0], eth:"0.01", inr:(0.01*INR_RATE).toFixed(0), block:e.blockNumber }));
+    selected.forEach(e => all.push({ type:"Borrower Selected", user:e.args[0], eth:"-", inr:"-", block:e.blockNumber }));
+    released.forEach(e => all.push({ type:"Loan", user:e.args[0], eth:formatEther(e.args[1]), inr:(formatEther(e.args[1])*INR_RATE).toFixed(0), block:e.blockNumber }));
+    emis.forEach(e => all.push({ type:`EMI ${e.args[2]}`, user:e.args[0], eth:formatEther(e.args[1]), inr:(formatEther(e.args[1])*INR_RATE).toFixed(0), block:e.blockNumber }));
+    profits.forEach(e => all.push({ type:"Profit", user:e.args[0], eth:formatEther(e.args[1]), inr:(formatEther(e.args[1])*INR_RATE).toFixed(0), block:e.blockNumber }));
 
-      selected.forEach(e => all.push({
-        type: "Borrower Selected",
-        user: e.args[0],
-        eth: "-",
-        inr: "-",
-        block: e.blockNumber
-      }));
-
-      released.forEach(e => all.push({
-        type: "Loan Released",
-        user: e.args[0],
-        eth: formatEther(e.args[1]),
-        inr: (parseFloat(formatEther(e.args[1])) * INR_RATE).toFixed(0),
-        block: e.blockNumber
-      }));
-
-      emis.forEach(e => all.push({
-        type: `EMI Paid (Month ${e.args[2].toString()})`,
-        user: e.args[0],
-        eth: formatEther(e.args[1]),
-        inr: (parseFloat(formatEther(e.args[1])) * INR_RATE).toFixed(0),
-        block: e.blockNumber
-      }));
-
-      profits.forEach(e => all.push({
-        type: "Profit Withdrawn",
-        user: e.args[0],
-        eth: formatEther(e.args[1]),
-        inr: (parseFloat(formatEther(e.args[1])) * INR_RATE).toFixed(0),
-        block: e.blockNumber
-      }));
-
-      all.sort((a,b)=>b.block - a.block);
-      setHistory(all);
-
-    } catch (err) {
-      console.log("History error", err);
-      setHistory([]);
-    }
+    all.sort((a,b)=>b.block-a.block);
+    setHistory(all);
   }
 
   async function joinGroup() {
     await (await contract.joinGroup({ value: parseEther("0.01") })).wait();
-    loadAll(contract);
-    loadHistory(contract);
+    loadAll(contract); loadHistory(contract);
   }
 
   async function selectBorrowerFunc() {
@@ -150,12 +110,17 @@ export default function App() {
   async function payEMI() {
     const val = await contract.getEMI();
     await (await contract.payEMI({ value: val })).wait();
-    loadAll(contract);
+    loadAll(contract); loadHistory(contract);
+  }
+
+  async function withdrawAll() {
+    await (await contract.withdrawAllProfit()).wait();
     loadHistory(contract);
   }
 
-  async function withdrawProfit() {
-    await (await contract.withdrawProfit()).wait();
+  async function withdrawPartial() {
+    await (await contract.withdrawPartialProfit(parseEther(withdrawAmount))).wait();
+    setWithdrawAmount("");
     loadHistory(contract);
   }
 
@@ -165,7 +130,7 @@ export default function App() {
         <div className="topbar">
           <div className="logo">BlockChit</div>
           <div>
-            <button onClick={() => setCurrency(currency === "INR" ? "ETH" : "INR")}>
+            <button onClick={() => setCurrency(currency==="INR"?"ETH":"INR")}>
               View: {currency}
             </button>
             <button onClick={connectWallet}>Connect Wallet</button>
@@ -203,28 +168,28 @@ export default function App() {
 
         {tab==="profit" && (
           <div className="panel">
-            <p>Per Member Share: {currency==="INR"?"₹":""}{(pool/3).toFixed(2)}</p>
-            <button onClick={withdrawProfit}>Withdraw Profit</button>
+            <input
+              placeholder="Withdraw Amount (ETH)"
+              value={withdrawAmount}
+              onChange={e=>setWithdrawAmount(e.target.value)}
+            />
+            <button onClick={withdrawPartial}>Withdraw Partial</button>
+            <button onClick={withdrawAll}>Withdraw Full Profit</button>
           </div>
         )}
 
         {tab==="transactions" && (
           <div className="panel">
-            <h3>Complete On-Chain Ledger</h3>
-
+            <h3>On-Chain Ledger</h3>
             <div className="history">
-              {history.length === 0 ? (
-                <p style={{ color: "#aaa" }}>No transactions yet</p>
-              ) : (
-                history.map((tx, i) => (
-                  <div key={i} className="historyRow">
-                    <b>{tx.type}</b><br/>
-                    User: {tx.user.slice(0,6)}...<br/>
-                    ETH: {tx.eth} <br/>
-                    INR: ₹{tx.inr}
-                  </div>
-                ))
-              )}
+              {history.map((tx,i)=>(
+                <div key={i} className="historyRow">
+                  <b>{tx.type}</b><br/>
+                  {tx.user.slice(0,6)}...<br/>
+                  ETH: {tx.eth}<br/>
+                  INR: ₹{tx.inr}
+                </div>
+              ))}
             </div>
           </div>
         )}

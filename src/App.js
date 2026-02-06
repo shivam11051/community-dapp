@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
 import "./App.css";
 
-const CONTRACT_ADDRESS = "0x723e686dddc509aa4fe1ec872da4a0247b5a6f63";
+const CONTRACT_ADDRESS = "0x7bca58cb772488eb8aef1c1a83dec7eb796dac64";
 const INR_RATE = 500000;
 
 const ABI = [

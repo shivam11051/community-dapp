@@ -1,70 +1,180 @@
-# Getting Started with Create React App
+# BlockChit — Decentralized Community Lending Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> Trustless chit funds and rotating savings groups on Ethereum. Every rule enforced by smart contracts — no middlemen, no fraud, full transparency.
 
-## Available Scripts
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://shivam11051.github.io/community-dapp)
+[![Contract](https://img.shields.io/badge/Contract-Sepolia%20Verified-green?style=for-the-badge)](https://sepolia.etherscan.io/address/0xf7029351b6aadafcaaa792fdcc5fe4bf46a433aa)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?style=for-the-badge&logo=solidity)](https://soliditylang.org)
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## What is BlockChit?
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+In India, millions of people participate in informal savings circles called chit funds, beesee, or ROSCAs. These work by having a group pool money every month and one member receives the entire pot. The problem is they run entirely on trust — the organiser holds the money, keeps paper records, and decides who gets paid first. Fraud and disputes are common.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+BlockChit moves this system on-chain. The smart contract holds the funds, members vote democratically for the borrower, and every rupee movement is recorded permanently on the blockchain. No organiser can disappear with the money. No records can be altered.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Live Demo
 
-### `npm run build`
+**DApp:** https://shivam11051.github.io/community-dapp
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**Requires MetaMask on Ethereum Sepolia Testnet.**
+Get free Sepolia ETH from: https://sepoliafaucet.com
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Smart Contract
 
-### `npm run eject`
+| Field | Value |
+|-------|-------|
+| Network | Ethereum Sepolia Testnet (Chain ID: 11155111) |
+| Address | `0xf7029351b6aadafcaaa792fdcc5fe4bf46a433aa` |
+| Etherscan | https://sepolia.etherscan.io/address/0xf7029351b6aadafcaaa792fdcc5fe4bf46a433aa |
+| Language | Solidity 0.8.20 |
+| Security | OpenZeppelin ReentrancyGuard + Pausable |
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Features
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+| Feature | Description |
+|---------|-------------|
+| **Group Lending** | Create public or invite-only lending groups with custom size and tenure |
+| **Democratic Voting** | Members vote on-chain for the borrower — deterministic, bias-free |
+| **EMI Automation** | Smart contract enforces monthly repayments with automatic late fees |
+| **Emergency Fund** | Members can request emergency funds — group votes to approve or reject |
+| **Credit Score** | On-chain payment history tracked per member per group |
+| **Profit Sharing** | Interest earned distributed proportionally to all members |
+| **Kick Mechanism** | Members vote to remove persistent defaulters |
+| **INR Display** | All amounts shown in both ETH and Indian Rupees |
+| **Admin Controls** | Contract pause/unpause, group approval queue |
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## Tech Stack
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+Frontend   →  React 18 + Ethers.js v6 + CSS3
+Contract   →  Solidity 0.8.20 + OpenZeppelin v4.9.3
+Network    →  Ethereum Sepolia Testnet
+Hosting    →  GitHub Pages (frontend) + Alchemy RPC
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```
+blockchit/
+├── contracts/
+│   └── CommunityFinance.sol      # Main smart contract (v2.1)
+├── src/
+│   ├── App.js                    # Root component, wallet connection, global state
+│   ├── App.css                   # Global styles
+│   ├── index.js                  # React entry point
+│   └── components/
+│       ├── Logo.js               # Brand logo component
+│       ├── GroupDiscovery.js     # Browse and join lending groups
+│       ├── CreateGroup.js        # Create new group (public/private)
+│       ├── MemberDashboard.js    # Active member view — pool, EMI, credit score
+│       ├── AdminDashboard.js     # Admin control panel — approve groups, metrics
+│       ├── VotingScreen.js       # Cast and resolve borrower votes
+│       ├── EMIScreen.js          # Borrower EMI repayment interface
+│       ├── EmergencyScreen.js    # Emergency fund requests and voting
+│       └── TransactionHistory.js # Full on-chain transaction log
+├── public/
+│   └── index.html
+└── package.json
+```
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Setup and Run Locally
 
-### Making a Progressive Web App
+**Prerequisites:** Node.js 18+, MetaMask browser extension
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```bash
+# Clone the repo
+git clone https://github.com/shivam11051/community-dapp.git
+cd community-dapp
 
-### Advanced Configuration
+# Install dependencies
+npm install
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+# Start development server
+npm start
+```
 
-### Deployment
+Open http://localhost:3000 in your browser. Connect MetaMask to Sepolia testnet.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## How It Works
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```
+1. CONNECT    →  User connects MetaMask wallet
+2. CREATE     →  Group creator sets size, tenure, contribution amount
+3. APPROVE    →  Admin reviews and approves the group
+4. JOIN       →  Members join by paying the contribution in ETH
+5. VOTE       →  Once full, members vote for who borrows first
+6. BORROW     →  Winner receives the entire pool directly to their wallet
+7. REPAY      →  Borrower pays monthly EMIs (late fee auto-applied if overdue)
+8. PROFIT     →  Interest collected is split among all members
+```
+
+---
+
+## Smart Contract Architecture
+
+The contract (`CommunityFinance.sol`) is organized in 9 sections:
+
+1. **Admin Controls** — `approveGroup`, `rejectGroup`, `pause`, `unpause`
+2. **Group Management** — `createGroup`, `joinGroup`, `expireGroup`
+3. **Invite System** — `inviteMember`, `revokeInvite`, `getInvitedList`
+4. **Voting** — `startVoting`, `castVote`, `resolveVote`
+5. **Loan & EMI** — `releaseFunds`, `payEMI`
+6. **Profit** — `withdrawAllProfit`, `withdrawPartialProfit`
+7. **Emergency** — `raiseEmergency`, `voteEmergency`, `resolveEmergency`, `repayEmergency`
+8. **Kick** — `raiseKick`, `voteKick`, `resolveKick`
+9. **View Functions** — `getMembers`, `getEMI`, `getCreditScore`, `getMemberInfo`, etc.
+
+---
+
+## Credit Score Formula
+
+```
+Score = (onTimePayments × 10) - (latePayments × 5) - (missedPayments × 20)
+Clamped to [0, ∞]   |   Starting score: 100
+```
+
+Tracked on-chain per member per group. Updates automatically inside `payEMI()`.
+
+---
+
+## Security
+
+- **ReentrancyGuard** on all fund-moving functions (`releaseFunds`, `payEMI`, `withdrawAllProfit`, `resolveKick`, `repayEmergency`)
+- **Pausable** — admin can halt all user transactions in emergency
+- **Access control** — `onlyAdmin`, `onlyMemberOf` modifiers on every sensitive function
+- **Input validation** — `require()` checks on contribution amounts, group sizes, tenure bounds
+- **Solidity 0.8.20** — built-in overflow/underflow protection
+
+---
+
+## Team
+
+| Name | Enrollment | Role |
+|------|-----------|------|
+| Shivam Mishra | S24CSEU1470 | Smart Contract + Frontend + integration|
+| Priyanshu Prakash Singh | S24CSEU1462 | Backend |
+
+Bennett University, Greater Noida — Design Thinking and Innovation Project 2025-26
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.

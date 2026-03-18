@@ -180,7 +180,7 @@ export default function EmergencyScreen({
                     {" "}<span style={{ fontSize: 12, color: "var(--text2)" }}>≈ ₹{(parseFloat(fmt(r.amount))*500000).toLocaleString()}</span>
                   </div>
                   <div style={{ fontSize: 13, color: "var(--text2)", marginBottom: 4 }}>
-                    "{r.reason}"
+                    &quot;{r.reason}&quot;
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text3)" }}>
                     By: {r.requester.slice(0,8)}...{r.requester.slice(-4)}

@@ -1,0 +1,74 @@
+[2026-03-21T09:18:39.173Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T09:18:39.178Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T09:18:39.178Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T09:18:39.178Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T09:18:39.178Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T09:18:39.179Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T09:20:23.306Z] ℹ️ INFO: GET / - 404 - 14ms
+[2026-03-21T09:20:23.436Z] ℹ️ INFO: GET /favicon.ico - 404 - 1ms
+[2026-03-21T09:32:32.073Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-03-21T09:32:40.018Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T09:32:40.023Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T09:32:40.023Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T09:32:40.023Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T09:32:40.024Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T09:32:40.024Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T09:33:12.729Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-03-21T09:33:28.848Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T09:33:28.852Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T09:33:28.852Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T09:33:28.852Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T09:33:28.852Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T09:33:28.853Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T09:35:03.429Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-03-21T09:35:08.135Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T09:35:08.139Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T09:35:08.139Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T09:35:08.139Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T09:35:08.139Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T09:35:08.140Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T09:35:27.575Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-03-21T09:35:38.265Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T09:35:38.269Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T09:35:38.269Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T09:35:38.269Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T09:35:38.269Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T09:35:38.270Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T09:37:12.781Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-03-21T09:37:18.193Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T09:37:18.197Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T09:37:18.197Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T09:37:18.197Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T09:37:18.197Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T09:37:18.198Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T09:37:19.024Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-03-21T09:38:29.490Z] ℹ️ INFO: GET / - 404 - 4ms
+[2026-03-21T09:38:31.284Z] ℹ️ INFO: GET / - 404 - 1ms
+[2026-03-21T09:40:03.002Z] ℹ️ INFO: GET /api/admin - 404 - 11ms
+[2026-03-21T09:41:33.489Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-03-21T09:44:29.390Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T09:44:29.395Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T09:44:29.395Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T09:44:29.395Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T09:44:29.395Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T09:44:29.396Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T09:44:30.235Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-03-21T09:44:36.026Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-03-21T09:44:36.031Z] ℹ️ INFO: GET /check/0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0 - 200 - 5ms
+[2026-03-21T09:44:36.166Z] ℹ️ INFO: GET /favicon.ico - 404 - 1ms
+[2026-03-21T09:44:44.500Z] ℹ️ INFO: GET /stats - 200 - 133ms
+[2026-03-21T09:44:53.336Z] ℹ️ INFO: GET /stats - 200 - 199ms
+[2026-03-21T09:52:58.777Z] ℹ️ INFO: GET /stats - 200 - 211ms
+[2026-03-21T09:52:58.818Z] ℹ️ INFO: GET /apple-touch-icon-precomposed.png - 404 - 1ms
+[2026-03-21T09:52:58.870Z] ℹ️ INFO: GET /apple-touch-icon.png - 404 - 0ms
+[2026-03-21T09:52:58.917Z] ℹ️ INFO: GET /favicon.ico - 404 - 1ms
+[2026-03-21T09:52:58.922Z] ℹ️ INFO: GET /apple-touch-icon-precomposed.png - 404 - 1ms
+[2026-03-21T09:52:58.924Z] ℹ️ INFO: GET /apple-touch-icon.png - 404 - 0ms
+[2026-03-21T09:52:58.926Z] ℹ️ INFO: GET /favicon.ico - 404 - 0ms
+[2026-03-21T09:52:59.046Z] ℹ️ INFO: GET /stats - 200 - 115ms
+[2026-03-21T09:52:59.050Z] ℹ️ INFO: GET /apple-touch-icon-precomposed.png - 404 - 0ms
+[2026-03-21T09:52:59.109Z] ℹ️ INFO: GET /apple-touch-icon.png - 404 - 0ms
+[2026-03-21T09:52:59.158Z] ℹ️ INFO: GET /favicon.ico - 404 - 0ms
+[2026-03-21T09:52:59.162Z] ℹ️ INFO: GET /apple-touch-icon-precomposed.png - 404 - 1ms
+[2026-03-21T09:52:59.164Z] ℹ️ INFO: GET /apple-touch-icon.png - 404 - 0ms
+[2026-03-21T09:52:59.166Z] ℹ️ INFO: GET /favicon.ico - 404 - 0ms

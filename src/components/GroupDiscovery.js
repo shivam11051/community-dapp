@@ -17,26 +17,61 @@ export default function GroupDiscovery({
   const [activeTab,      setActiveTab]      = useState("public");
   const [myInvites,      setMyInvites]      = useState([]);
   const [loadingInvites, setLoadingInvites] = useState(false);
+  const [invitesError,   setInvitesError]   = useState(null);
 
-  useEffect(() => { loadGroups(); }, [contract, openGroups]);
-  useEffect(() => { loadMyInvites(); }, [contract, account]); // load on mount so badge shows
-  useEffect(() => { if (activeTab === "invites") loadMyInvites(); }, [activeTab]);
+  // ─── LOAD GROUPS WHEN CONTRACT IS READY ──────────────────────
+  useEffect(() => {
+    if (contract) {
+      console.log("✅ Contract ready, loading groups...");
+      loadGroups();
+    } else {
+      console.warn("⏳ Waiting for contract...");
+    }
+  }, [contract, openGroups]);
 
+  // ─── LOAD INVITES WHEN CONTRACT AND ACCOUNT ARE READY ────────
+  useEffect(() => {
+    if (contract && account) {
+      console.log("✅ Contract and account ready, loading invites...");
+      loadMyInvites();
+    } else {
+      console.warn("⏳ Waiting for contract and account...");
+    }
+  }, [contract, account]); // ← Add dependencies
+
+  // ─── RELOAD INVITES WHEN TAB CHANGES ────────────────────────
+  useEffect(() => {
+    if (activeTab === "invites" && contract && account) {
+      loadMyInvites();
+    }
+  }, [activeTab]);
+
+  // ─── LOAD ALL GROUPS ────────────────────────────────────────
   async function loadGroups() {
-    if (!contract) return;
+    if (!contract) {
+      console.warn("⚠️ Contract not available");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const count = Number(await contract.groupCount());
       const all   = [];
+      
       for (let i = 1; i <= count; i++) {
         const cached = groupCache[i];
+        
+        // Use cached data if available
         if (cached && cached.isPrivate !== undefined) {
           all.push(cached);
         } else {
+          // Fetch from contract
           try {
             const g       = await contract.groups(i);
             const members = await contract.getMembers(i);
             const isPrivate = g.isPrivate !== undefined ? g.isPrivate : false;
+            
             all.push({
               id:           Number(g.id),
               name:         g.name,
@@ -51,47 +86,92 @@ export default function GroupDiscovery({
               totalPool:    g.totalPool,
               isPrivate:    isPrivate,
             });
-          } catch { /* skip broken entries */ }
+          } catch (e) {
+            console.warn(`⚠️ Could not load group ${i}:`, e.message);
+            /* skip broken entries */
+          }
         }
       }
+      
       setGroups(all);
+      console.log(`✅ Loaded ${all.length} groups`);
+      
     } catch (err) {
-      console.error("loadGroups:", err);
+      console.error("❌ loadGroups error:", err.message);
+      setGroups([]);
     } finally {
       setLoading(false);
     }
   }
 
-  // Loads private group invites — checks ALL groups (PENDING + OPEN) so invite shows immediately
+  // ─── LOAD MY PRIVATE INVITES ─────────────────────────────────
   async function loadMyInvites() {
-    if (!contract || !account) return;
-    setLoadingInvites(true);
-    try {
-      // First try contract's getMyInvites (returns OPEN groups only)
-      let inviteIds = [];
-      try {
-        inviteIds = (await contract.getMyInvites(account)).map(Number);
-      } catch (e) { console.log("getMyInvites error:", e); }
+    // ✅ Safety checks
+    if (!contract) {
+      console.warn("⚠️ Contract is null");
+      setInvitesError("Contract not initialized");
+      setLoadingInvites(false);
+      return;
+    }
 
-      // Also scan ALL groups manually to catch PENDING invites
+    if (!account) {
+      console.warn("⚠️ Account is null");
+      setInvitesError("Account not connected");
+      setLoadingInvites(false);
+      return;
+    }
+
+    setLoadingInvites(true);
+    setInvitesError(null);
+
+    try {
+      console.log("📋 Fetching invites for:", account);
+      
+      let inviteIds = [];
+
+      // ✅ Method 1: Try contract's getMyInvites (returns OPEN groups only)
+      try {
+        const result = await contract.getMyInvites(account);
+        inviteIds = (result || []).map(Number);
+        console.log("✅ getMyInvites result:", inviteIds);
+      } catch (e) {
+        console.warn("⚠️ getMyInvites failed:", e.message);
+        // Continue anyway, try manual scan below
+      }
+
+      // ✅ Method 2: Scan ALL groups manually to catch PENDING invites
       // (admin hasn't approved yet but user was invited)
       try {
         const count = Number(await contract.groupCount());
+        
         for (let i = 1; i <= count; i++) {
           if (inviteIds.includes(i)) continue; // already found
+          
           try {
             const isInv = await contract.isInvited(i, account);
-            if (isInv) inviteIds.push(i);
-          } catch (e) { /* skip */ }
+            if (isInv) {
+              inviteIds.push(i);
+              console.log(`✅ Found invite for group ${i}`);
+            }
+          } catch (e) {
+            /* skip this group */
+          }
         }
-      } catch (e) { console.log("manual scan error:", e); }
+      } catch (e) {
+        console.warn("⚠️ Manual invite scan error:", e.message);
+      }
 
+      console.log("📬 Total invite IDs found:", inviteIds);
+
+      // ✅ Fetch full data for each invite
       const inviteData = [];
+      
       for (const gid of inviteIds) {
         try {
           const g       = await contract.groups(gid);
           const members = await contract.getMembers(gid);
           const status  = Number(g.status);
+          
           inviteData.push({
             id:           Number(g.id),
             name:         g.name,
@@ -107,26 +187,40 @@ export default function GroupDiscovery({
             isPrivate:    true,
             isPending:    status === 0, // waiting for admin approval
           });
-        } catch (e) { /* skip broken entries */ }
+        } catch (e) {
+          console.warn(`⚠️ Could not load invite group ${gid}:`, e.message);
+          /* skip broken entries */
+        }
       }
+      
       setMyInvites(inviteData);
+      console.log(`✅ Loaded ${inviteData.length} invites`);
+      
     } catch (err) {
-      console.error("loadMyInvites:", err);
+      console.error("❌ loadMyInvites error:", err.message);
+      setInvitesError(err.message);
       setMyInvites([]);
     } finally {
       setLoadingInvites(false);
     }
   }
 
+  // ─── HANDLE JOIN GROUP ───────────────────────────────────────
   async function handleJoin(gid) {
     if (myGroupId > 0) return;
     setJoiningId(gid);
-    await actions.joinGroup(gid);
-    setJoiningId(null);
-    await loadGlobalState();
+    
+    try {
+      await actions.joinGroup(gid);
+      await loadGlobalState();
+    } catch (e) {
+      console.error("❌ Join error:", e);
+    } finally {
+      setJoiningId(null);
+    }
   }
 
-  // Filter + sort for PUBLIC groups
+  // ─── FILTER + SORT FOR PUBLIC GROUPS ─────────────────────────
   const publicGroups = groups
     .filter(g => !g.isPrivate)
     .filter(g => g.name.toLowerCase().includes(search.toLowerCase()))
@@ -138,7 +232,7 @@ export default function GroupDiscovery({
       return 0;
     });
 
-  // Filter + sort for PRIVATE invites
+  // ─── FILTER + SORT FOR PRIVATE INVITES ──────────────────────
   const privateInvites = myInvites
     .filter(g => g.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a, b) => {
@@ -289,6 +383,17 @@ export default function GroupDiscovery({
         }}>
           🔒 These are <strong>private groups</strong> where the creator personally invited your wallet.
           Not visible to anyone else.
+        </div>
+      )}
+
+      {/* ── Error Message ───────────────────────────────────────── */}
+      {invitesError && activeTab === "invites" && (
+        <div style={{
+          background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.2)",
+          borderRadius: "var(--radius-sm)", padding: "12px 16px",
+          fontSize: 12, color: "#EF4444", marginBottom: 16
+        }}>
+          ⚠️ {invitesError}
         </div>
       )}
 

@@ -72,3 +72,33 @@
 [2026-03-21T09:52:59.162Z] ℹ️ INFO: GET /apple-touch-icon-precomposed.png - 404 - 1ms
 [2026-03-21T09:52:59.164Z] ℹ️ INFO: GET /apple-touch-icon.png - 404 - 0ms
 [2026-03-21T09:52:59.166Z] ℹ️ INFO: GET /favicon.ico - 404 - 0ms
+[2026-03-21T10:09:21.416Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T10:09:21.432Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T10:09:21.432Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T10:09:21.432Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T10:09:21.432Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T10:09:21.433Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T10:09:22.280Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-03-21T10:28:22.242Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T10:28:22.253Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T10:28:22.254Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T10:28:22.254Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T10:28:22.254Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T10:28:22.255Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T10:28:23.122Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-03-21T10:29:58.234Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T10:29:58.242Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T10:29:58.242Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T10:29:58.242Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T10:29:58.242Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T10:29:58.243Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T10:29:59.105Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-03-21T10:30:01.838Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-03-21T10:30:12.856Z] ℹ️ INFO: 🚀 Initializing services...
+[2026-03-21T10:30:12.861Z] ℹ️ INFO: 🚀 Backend running on http://localhost:5001
+[2026-03-21T10:30:12.861Z] ℹ️ INFO: 📍 Environment: development
+[2026-03-21T10:30:12.861Z] ℹ️ INFO: 🔗 Contract: 0xe97B7c90598617aB247B55992707f9c62CD47228
+[2026-03-21T10:30:12.861Z] ℹ️ INFO: ✅ Contract service initialized
+[2026-03-21T10:30:12.861Z] ℹ️ INFO: ✅ Event listener started
+[2026-03-21T10:30:13.329Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-03-21T10:30:42.194Z] ℹ️ INFO: 🛑 Shutting down gracefully...

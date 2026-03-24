@@ -14,15 +14,17 @@ import { ADDRESS as CONTRACT_ADDRESS, ABI } from "./contracts/contractConfig";
 import { safeCall, safeTransaction } from "./utils/safeCall";
 
 // ─── SCREENS ─────────────────────────────────────────────────────
-import GroupDiscovery   from "./components/GroupDiscovery";
-import CreateGroup      from "./components/CreateGroup";
-import AdminDashboard   from "./components/AdminDashboard";
-import MemberDashboard  from "./components/MemberDashboard";
-import VotingScreen     from "./components/VotingScreen";
-import EmergencyScreen  from "./components/EmergencyScreen";
-import EMIScreen        from "./components/EMIScreen";
+import GroupDiscovery    from "./components/GroupDiscovery";
+import CreateGroup       from "./components/CreateGroup";
+import AdminDashboard    from "./components/AdminDashboard";
+import MemberDashboard   from "./components/MemberDashboard";
+import VotingScreen      from "./components/VotingScreen";
+import EmergencyScreen   from "./components/EmergencyScreen";
+import EMIScreen         from "./components/EMIScreen";
 import TransactionHistory from "./components/TransactionHistory";
-import KickScreen        from "./components/KickScreen";
+import KickScreen         from "./components/KickScreen";
+import InvestorDashboard  from "./components/InvestorDashboard";
+import LandingPage        from "./components/LandingPage";
 
 // ─── NOTIFICATION TYPES ──────────────────────────────────────────
 const NOTIF = {
@@ -47,6 +49,9 @@ function AppContent() {
     isAdmin, 
     loading: contextLoading,
     addNotif,
+    removeNotif,
+    initializeWeb3,
+    disconnect,
   } = useContext(AppContext);
 
   // ── Navigation
@@ -363,7 +368,16 @@ function AppContent() {
       });
 
       if (receipt) {
-        addNotif(successMsg || "✅ Transaction confirmed!", NOTIF.SUCCESS);
+        const txHash = receipt?.hash;
+        const etherscanUrl = txHash
+          ? `https://sepolia.etherscan.io/tx/${txHash}`
+          : null;
+        addNotif(
+          successMsg || "✅ Transaction confirmed!",
+          NOTIF.SUCCESS,
+          undefined,
+          etherscanUrl
+        );
         return true;
       } else {
         addNotif(errorMsg || "❌ Transaction failed", NOTIF.ERROR);
@@ -565,6 +579,28 @@ function AppContent() {
       if (ok) await loadGlobalState();
     },
 
+    // ── Leave group
+    leaveGroup: async (gid) => {
+      const ok = await sendTx(
+        () => contract.leaveGroup(gid),
+        "✅ Left the group. Your contribution has been refunded."
+      );
+      if (ok) {
+        await loadGlobalState();
+        setScreen("discovery");
+        setActiveGroupId(null);
+      }
+      return ok;
+    },
+
+    // ── Mark missed EMI (can be called by anyone)
+    checkAndMarkMissed: async (gid) => {
+      return await sendTx(
+        () => contract.checkAndMarkMissed(gid),
+        "✅ Missed EMI marked on-chain."
+      );
+    },
+
     // ── Admin
     pause: async () => {
       return await sendTx(() => contract.pause(), "✅ Contract paused successfully.");
@@ -579,6 +615,10 @@ function AppContent() {
   const views = {
     getCreditScore: (gid, addr) => contract?.getCreditScore(gid, addr),
     getMemberInfo: (gid, addr) => contract?.getMemberInfo(gid, addr),
+    getTrustScore: (gid, addr) => contract?.getTrustScore(gid, addr),
+    getGroupMetrics: (gid) => contract?.getGroupMetrics(gid),
+    getGroupHealth: (gid) => contract?.getGroupHealth(gid),
+    getGroupROI: (gid) => contract?.getGroupROI(gid),
     getEMI: (gid) => contract?.getEMI(gid),
     getEMIinINR: (gid) => contract?.getEMIinINR(gid),
     getLateFee: (gid) => contract?.getLateFee(gid),
@@ -731,6 +771,12 @@ function AppContent() {
                   History
                 </button>
               )}
+              <button
+                className={`nav-btn ${screen === "investor" ? "active" : ""}`}
+                onClick={() => setScreen("investor")}
+              >
+                📊 Invest
+              </button>
               {isAdmin && (
                 <button
                   className={`nav-btn admin-btn ${screen === "admin" ? "active" : ""}`}
@@ -760,13 +806,18 @@ function AppContent() {
             </div>
           )}
           {!account ? (
-            <button className="btn-connect" disabled={contextLoading}>
+            <button
+              className="btn-connect"
+              disabled={contextLoading}
+              onClick={initializeWeb3}
+            >
               {contextLoading ? "Connecting..." : "Connect Wallet"}
             </button>
           ) : (
-            <div className="wallet-chip">
+            <div className="wallet-chip" title="Click to disconnect" style={{ cursor: "pointer" }} onClick={disconnect}>
               <div className="dot dot-green" />
               {account.slice(0, 6)}...{account.slice(-4)}
+              <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.6 }}>✕</span>
             </div>
           )}
         </div>
@@ -801,76 +852,11 @@ function AppContent() {
       <div className="main">
         {!account ? (
           /* ── LANDING ─────────────────────────────────────────── */
-          <div className="landing">
-            <div className="landing-hero">
-              <div className="hero-tag">⬡ Powered by Ethereum · Sepolia Testnet</div>
-              <h1>
-                Community lending,
-                <br />
-                <span className="grad">reimagined on-chain.</span>
-              </h1>
-              <p>
-                Create trusted circles, vote for borrowers, earn profit together
-                — every rule enforced by smart contracts, zero middlemen.
-              </p>
-              <div className="hero-btns">
-                <button className="btn-primary btn-lg" disabled={contextLoading}>
-                  {contextLoading ? "Connecting..." : "Connect MetaMask"}
-                </button>
-                <button
-                  className="btn-ghost btn-lg"
-                  onClick={() =>
-                    window.open(
-                      "https://sepolia.etherscan.io/address/" + CONTRACT_ADDRESS,
-                      "_blank"
-                    )
-                  }
-                >
-                  View Contract ↗
-                </button>
-              </div>
-            </div>
-            <div className="landing-features">
-              {[
-                {
-                  icon: "⬡",
-                  title: "Multi-Group",
-                  desc: "Create or join groups with custom EMI, size & tenure — public or invite-only",
-                },
-                {
-                  icon: "🗳️",
-                  title: "Vote to Borrow",
-                  desc: "Members vote democratically for who receives the loan",
-                },
-                {
-                  icon: "🚨",
-                  title: "Emergency Fund",
-                  desc: "Need urgent money? Request it — group votes yes or no",
-                },
-                {
-                  icon: "⭐",
-                  title: "Credit Score",
-                  desc: "On-time payments build your on-chain credit reputation",
-                },
-                {
-                  icon: "📊",
-                  title: "Profit Share",
-                  desc: "Interest earned is split proportionally among members",
-                },
-                {
-                  icon: "🔒",
-                  title: "Trustless",
-                  desc: "Smart contracts enforce every rule — no middlemen",
-                },
-              ].map((f, i) => (
-                <div className="feature-card" key={i}>
-                  <div className="feature-icon">{f.icon}</div>
-                  <h3>{f.title}</h3>
-                  <p>{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          <LandingPage
+            contextLoading={contextLoading}
+            initializeWeb3={initializeWeb3}
+            CONTRACT_ADDRESS={CONTRACT_ADDRESS}
+          />
         ) : (
           /* ── SCREENS ─────────────────────────────────────────── */
           <>
@@ -883,6 +869,7 @@ function AppContent() {
             {screen === "kick" && <KickScreen {...sharedProps} />}
             {screen === "emi" && <EMIScreen {...sharedProps} />}
             {screen === "history" && <TransactionHistory {...sharedProps} />}
+            {screen === "investor" && <InvestorDashboard {...sharedProps} />}
             {screen === "invites" && (
               <GroupDiscovery {...sharedProps} showInvitesOnly={true} />
             )}

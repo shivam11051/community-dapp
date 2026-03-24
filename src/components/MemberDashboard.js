@@ -487,7 +487,36 @@ export default function MemberDashboard({
               💸 Release Funds
             </button>
           )}
+          {/* Leave group: only OPEN groups, non-creator */}
+          {group?.status === 1 && !isCreator && (
+            <button
+              style={{
+                background: "var(--red-dim)", color: "var(--red)",
+                border: "1px solid rgba(239,68,68,.3)", borderRadius: "var(--radius-sm)",
+                padding: "8px 16px", fontSize: 13, cursor: "pointer", fontFamily: "inherit",
+              }}
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to leave? Your contribution will be refunded.")) {
+                  await actions.leaveGroup(gid);
+                }
+              }}
+              disabled={txPending}
+            >
+              🚪 Leave Group
+            </button>
+          )}
         </div>
+
+        {/* Multi-round hint: loan repaid, new round starting */}
+        {group?.status === 2 && !group?.loan?.active && group?.borrower === "0x0000000000000000000000000000000000000000" && group?.completedLoans > 0 && (
+          <div style={{
+            marginTop: 14, padding: "12px 16px",
+            background: "rgba(167,139,250,.08)", border: "1px solid var(--purple-mid)",
+            borderRadius: "var(--radius-sm)", fontSize: 13, color: "var(--purple)",
+          }}>
+            🔄 Round {group.completedLoans} complete! Start voting to select the next borrower.
+          </div>
+        )}
       </div>
     </div>
   );

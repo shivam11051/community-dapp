@@ -9,7 +9,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1,        // minimize bytecode size (contract is 25.6 kB, limit is 24.5 kB)
       },
       viaIR: true,
     },

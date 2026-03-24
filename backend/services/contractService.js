@@ -1,246 +1,258 @@
+/**
+ * contractService.js - v3.0 Production
+ *
+ * ABI is now fully synced with CommunityFinance.sol v3.0.
+ * Only real functions that exist in the contract are included.
+ */
+
 const { ethers } = require("ethers");
-require("dotenv").config();
+const logger     = require("../utils/logger");
 
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY;
+const ALCHEMY_KEY      = process.env.ALCHEMY_KEY;
 
-// Complete contract ABI (read-only functions)
-const CONTRACT_ABI = [
-  // View functions
-  "function groups(uint gid) external view returns (tuple(uint id, string name, address creator, uint8 status, uint contribution, uint maxSize, uint tenure, bool isPrivate, address[] members, uint memberCount, uint totalPool, uint fillDeadline, tuple(bool active, address borrower, uint principal, uint interestRate, uint monthlyPrincipal, uint monthlyInterest, uint monthsPaid, uint monthsDue) loan, uint profitPool))",
-  "function getGroupCount() external view returns (uint)",
+// ── ABI (Only functions that actually exist in the contract) ──────
+const ABI = [
+  // ── Read: Groups ──────────────────────────────────────────────
+  "function groupCount() external view returns (uint)",
+  "function groups(uint) external view returns (uint id, string name, address creator, uint8 status, uint contribution, uint maxSize, uint tenure, uint fillDeadline, address borrower, uint emergencyCount, uint kickCount, uint totalPool, uint profitPool, bool isPrivate, uint completedLoans)",
   "function getMembers(uint gid) external view returns (address[])",
-  "function getMemberInfo(uint gid, address member) external view returns (tuple(uint creditScore, uint onTimeEMIs, uint lateEMIs, uint missedEMIs))",
+  "function getOpenGroups() external view returns (uint[])",
+  "function getPendingGroups() external view returns (uint[])",
   "function getMyInvites(address user) external view returns (uint[])",
+  "function getMyPrivateInvites(address user) external view returns (uint[])",
+  "function isInvited(uint gid, address user) external view returns (bool)",
+  "function getInvitedList(uint gid) external view returns (address[])",
+
+  // ── Read: Loan & EMI ─────────────────────────────────────────
+  "function getEMI(uint gid) external view returns (uint)",
+  "function getLateFee(uint gid) external view returns (uint)",
+  "function getNextDueTime(uint gid) external view returns (uint)",
+  "function getRemainingMonths(uint gid) external view returns (uint)",
+  "function getPoolBalance(uint gid) external view returns (uint)",
   "function getEMIinINR(uint gid) external view returns (uint)",
   "function getPoolInINR(uint gid) external view returns (uint)",
+
+  // ── Read: Member info ─────────────────────────────────────────
+  "function getMemberInfo(uint gid, address member) external view returns (uint creditScore, uint missed, uint onTime, uint late)",
+  "function getCreditScore(uint gid, address member) external view returns (uint)",
+  "function getProfitBalance(uint gid, address member) external view returns (uint)",
+  "function getVoteCount(uint gid, address candidate) external view returns (uint)",
+
+  // ── NEW Read: Investor / Analytics ────────────────────────────
   "function getTrustScore(uint gid, address member) external view returns (uint)",
-  "function getGroupMetrics(uint gid) external view returns (uint totalMembers, uint activeLoan, uint poolETH, uint completedLoans)",
+  "function getGroupMetrics(uint gid) external view returns (uint totalMembers, bool activeLoan, uint poolETH, uint completedLoans)",
   "function getGroupHealth(uint gid) external view returns (uint fillPercentage, uint averageCreditScore, uint onTimeMemberCount, uint defaultedMemberCount, uint profitPoolAmount)",
   "function getGroupROI(uint gid) external view returns (uint principalReturned, uint profitEarned, uint roiPercentage, uint defaultRate)",
+
+  // ── Read: Admin ──────────────────────────────────────────────
+  "function admin() external view returns (address)",
+  "function paused() external view returns (bool)",
+
+  // ── Write: Group management ───────────────────────────────────
+  "function createGroup(string calldata name, uint maxSize, uint tenure, bool isPrivate, address[] calldata invites) external payable",
+  "function joinGroup(uint gid) external payable",
+  "function leaveGroup(uint gid) external",
+  "function expireGroup(uint gid) external",
+
+  // ── Write: Invites ────────────────────────────────────────────
+  "function inviteMember(uint gid, address invitee) external",
+  "function revokeInvite(uint gid, address invitee) external",
+
+  // ── Write: Voting ─────────────────────────────────────────────
+  "function startVoting(uint gid) external",
+  "function castVote(uint gid, address candidate) external",
+  "function resolveVote(uint gid) external",
+  "function releaseFunds(uint gid) external",
+
+  // ── Write: EMI ────────────────────────────────────────────────
+  "function payEMI(uint gid) external payable",
+  "function checkAndMarkMissed(uint gid) external",
+
+  // ── Write: Profit ─────────────────────────────────────────────
+  "function withdrawAllProfit(uint gid) external",
+  "function withdrawPartialProfit(uint gid, uint amount) external",
+
+  // ── Write: Emergency ─────────────────────────────────────────
+  "function raiseEmergency(uint gid, uint amount, string calldata reason) external",
+  "function voteEmergency(uint gid, uint rid, bool support) external",
+  "function resolveEmergency(uint gid, uint rid) external",
+  "function repayEmergency(uint gid, uint rid) external payable",
+
+  // ── Write: Kick ───────────────────────────────────────────────
+  "function raiseKick(uint gid, address target) external",
+  "function voteKick(uint gid, uint kid, bool support) external",
+  "function resolveKick(uint gid, uint kid) external",
+
+  // ── Write: Admin ──────────────────────────────────────────────
+  "function approveGroup(uint gid) external",
+  "function rejectGroup(uint gid) external",
+  "function pause() external",
+  "function unpause() external",
+
+  // ── Events ────────────────────────────────────────────────────
+  "event GroupCreated(uint indexed gid, address creator, string name, uint contribution, uint maxSize, uint tenure, bool isPrivate)",
+  "event GroupApproved(uint indexed gid)",
+  "event GroupRejected(uint indexed gid)",
+  "event GroupClosed(uint indexed gid, string reason)",
+  "event MemberJoined(uint indexed gid, address member)",
+  "event MemberLeft(uint indexed gid, address member)",
+  "event VotingStarted(uint indexed gid, uint endTime)",
+  "event VoteCast(uint indexed gid, address voter, address candidate)",
+  "event BorrowerSelected(uint indexed gid, address borrower, bool wasTie)",
+  "event LoanReleased(uint indexed gid, address borrower, uint amount)",
+  "event EMIPaid(uint indexed gid, address borrower, uint amount, uint month, uint lateFee)",
+  "event LoanCompleted(uint indexed gid, uint round)",
+  "event EMIMissed(uint indexed gid, address borrower, uint missedCount)",
+  "event ProfitWithdrawn(uint indexed gid, address member, uint amount)",
+  "event CreditUpdated(uint indexed gid, address member, uint newScore)",
+  "event EmergencyRequested(uint indexed gid, uint indexed rid, address requester, uint amount, string reason)",
+  "event EmergencyResolved(uint indexed gid, uint indexed rid, bool approved, uint yes, uint no)",
+  "event EmergencyReleased(uint indexed gid, uint indexed rid, address requester, uint amount)",
+  "event EmergencyRepaid(uint indexed gid, uint indexed rid, address requester, uint amount)",
+  "event KickRaised(uint indexed gid, uint indexed kid, address target, address raisedBy)",
+  "event KickResolved(uint indexed gid, uint indexed kid, address target, bool kicked)",
+  "event MemberInvited(uint indexed gid, address indexed invitee)",
+  "event InviteRevoked(uint indexed gid, address indexed invitee)",
 ];
 
-let provider;
-let contract;
+let provider = null;
+let contract = null;
 
-async function initContractService() {
-  try {
-    console.log("🔌 Initializing contract service...");
-    provider = new ethers.JsonRpcProvider(ALCHEMY_KEY);
-    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
-    console.log("✅ Contract service ready");
-    return true;
-  } catch (error) {
-    console.error("❌ Contract service init failed:", error.message);
-    return false;
+function getProvider() {
+  if (!provider) {
+    provider = new ethers.AlchemyProvider("sepolia", ALCHEMY_KEY);
   }
+  return provider;
 }
 
-// ─────────────────────────────────────────────
-// GROUP FUNCTIONS
-// ─────────────────────────────────────────────
+function getContract() {
+  if (!contract) {
+    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, getProvider());
+  }
+  return contract;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
 
 async function getGroupCount() {
-  try {
-    const count = await contract.getGroupCount();
-    return Number(count);
-  } catch (error) {
-    console.error("❌ Error getting group count:", error.message);
-    return 0;
-  }
+  return Number(await getContract().groupCount());
 }
 
 async function getGroupData(gid) {
-  try {
-    const group = await contract.groups(gid);
-    return {
-      id: Number(group.id),
-      name: group.name,
-      creator: group.creator,
-      status: Number(group.status),
-      contribution: group.contribution.toString(),
-      maxSize: Number(group.maxSize),
-      tenure: Number(group.tenure),
-      isPrivate: group.isPrivate,
-      memberCount: Number(group.memberCount),
-      totalPool: group.totalPool.toString(),
-      fillDeadline: Number(group.fillDeadline),
-      profitPool: group.profitPool.toString(),
-      loan: {
-        active: group.loan.active,
-        borrower: group.loan.borrower,
-        principal: group.loan.principal.toString(),
-        interestRate: Number(group.loan.interestRate),
-        monthlyPrincipal: group.loan.monthlyPrincipal.toString(),
-        monthlyInterest: group.loan.monthlyInterest.toString(),
-        monthsPaid: Number(group.loan.monthsPaid),
-        monthsDue: Number(group.loan.monthsDue),
-      },
-    };
-  } catch (error) {
-    console.error(`❌ Error getting group ${gid}:`, error.message);
-    return null;
-  }
-}
+  const c       = getContract();
+  const g       = await c.groups(gid);
+  const members = await c.getMembers(gid);
 
-async function getAllGroups() {
-  try {
-    const count = await getGroupCount();
-    const groups = [];
-
-    for (let i = 1; i <= count; i++) {
-      const groupData = await getGroupData(i);
-      if (groupData) {
-        groups.push(groupData);
-      }
-    }
-
-    return groups;
-  } catch (error) {
-    console.error("❌ Error getting all groups:", error.message);
-    return [];
-  }
-}
-
-// ─────────────────────────────────────────────
-// MEMBER FUNCTIONS
-// ─────────────────────────────────────────────
-
-async function getMembers(gid) {
-  try {
-    const members = await contract.getMembers(gid);
-    return members;
-  } catch (error) {
-    console.error(`❌ Error getting members for group ${gid}:`, error.message);
-    return [];
-  }
-}
-
-async function getMemberInfo(gid, memberAddress) {
-  try {
-    const info = await contract.getMemberInfo(gid, memberAddress);
-    return {
-      creditScore: Number(info.creditScore),
-      onTimeEMIs: Number(info.onTimeEMIs),
-      lateEMIs: Number(info.lateEMIs),
-      missedEMIs: Number(info.missedEMIs),
-    };
-  } catch (error) {
-    console.error(`❌ Error getting member info:`, error.message);
-    return null;
-  }
-}
-
-// ─────────────────────────────────────────────
-// INVESTOR FUNCTIONS (PHASE 5)
-// ─────────────────────────────────────────────
-
-async function getTrustScore(gid, memberAddress) {
-  try {
-    const score = await contract.getTrustScore(gid, memberAddress);
-    return Number(score);
-  } catch (error) {
-    console.error(`❌ Error getting trust score:`, error.message);
-    return 0;
-  }
+  return {
+    id:             Number(g.id),
+    name:           g.name,
+    creator:        g.creator,
+    status:         Number(g.status),
+    contribution:   g.contribution.toString(),
+    maxSize:        Number(g.maxSize),
+    tenure:         Number(g.tenure),
+    fillDeadline:   Number(g.fillDeadline),
+    borrower:       g.borrower,
+    emergencyCount: Number(g.emergencyCount),
+    kickCount:      Number(g.kickCount),
+    totalPool:      g.totalPool.toString(),
+    profitPool:     g.profitPool.toString(),
+    isPrivate:      g.isPrivate,
+    completedLoans: Number(g.completedLoans),
+    memberCount:    members.length,
+    members,
+  };
 }
 
 async function getGroupMetrics(gid) {
-  try {
-    const metrics = await contract.getGroupMetrics(gid);
-    return {
-      totalMembers: Number(metrics.totalMembers),
-      activeLoan: Number(metrics.activeLoan),
-      poolETH: metrics.poolETH.toString(),
-      completedLoans: Number(metrics.completedLoans),
-    };
-  } catch (error) {
-    console.error(`❌ Error getting group metrics:`, error.message);
-    return null;
-  }
+  const c = getContract();
+  const [totalMembers, activeLoan, poolETH, completedLoans] =
+    await c.getGroupMetrics(gid);
+
+  return {
+    totalMembers:   Number(totalMembers),
+    activeLoan,
+    poolETH:        poolETH.toString(),
+    completedLoans: Number(completedLoans),
+  };
 }
 
 async function getGroupHealth(gid) {
-  try {
-    const health = await contract.getGroupHealth(gid);
-    return {
-      fillPercentage: Number(health.fillPercentage),
-      averageCreditScore: Number(health.averageCreditScore),
-      onTimeMemberCount: Number(health.onTimeMemberCount),
-      defaultedMemberCount: Number(health.defaultedMemberCount),
-      profitPoolAmount: health.profitPoolAmount.toString(),
-    };
-  } catch (error) {
-    console.error(`❌ Error getting group health:`, error.message);
-    return null;
-  }
+  const c = getContract();
+  const [fillPct, avgCredit, onTimeCnt, defaultCnt, profitPool] =
+    await c.getGroupHealth(gid);
+
+  return {
+    fillPercentage:        Number(fillPct),
+    averageCreditScore:    Number(avgCredit),
+    onTimeMemberCount:     Number(onTimeCnt),
+    defaultedMemberCount:  Number(defaultCnt),
+    profitPoolAmount:      profitPool.toString(),
+  };
 }
 
 async function getGroupROI(gid) {
-  try {
-    const roi = await contract.getGroupROI(gid);
-    return {
-      principalReturned: roi.principalReturned.toString(),
-      profitEarned: roi.profitEarned.toString(),
-      roiPercentage: Number(roi.roiPercentage),
-      defaultRate: Number(roi.defaultRate),
-    };
-  } catch (error) {
-    console.error(`❌ Error getting group ROI:`, error.message);
-    return null;
-  }
+  const c = getContract();
+  const [principalReturned, profitEarned, roiPct, defaultRate] =
+    await c.getGroupROI(gid);
+
+  return {
+    principalReturned: principalReturned.toString(),
+    profitEarned:      profitEarned.toString(),
+    roiPercentage:     Number(roiPct),
+    defaultRate:       Number(defaultRate),
+  };
 }
 
-// ─────────────────────────────────────────────
-// INVITE FUNCTIONS
-// ─────────────────────────────────────────────
+async function getMemberInfo(gid, address) {
+  const c = getContract();
+  const [creditScore, missed, onTime, late] =
+    await c.getMemberInfo(gid, address);
+  const trustScore = await c.getTrustScore(gid, address);
 
-async function getMyInvites(userAddress) {
-  try {
-    const invites = await contract.getMyInvites(userAddress);
-    return invites.map(id => Number(id));
-  } catch (error) {
-    console.error(`❌ Error getting invites:`, error.message);
-    return [];
-  }
+  return {
+    creditScore:  Number(creditScore),
+    missedEMIs:   Number(missed),
+    onTimeEMIs:   Number(onTime),
+    lateEMIs:     Number(late),
+    trustScore:   Number(trustScore),
+  };
 }
 
-// ─────────────────────────────────────────────
-// PRICE CONVERSION FUNCTIONS
-// ─────────────────────────────────────────────
-
-async function getEMIinINR(gid) {
+async function calculateInvestmentScore(gid) {
   try {
-    const inr = await contract.getEMIinINR(gid);
-    return inr.toString();
-  } catch (error) {
-    console.error(`❌ Error getting EMI in INR:`, error.message);
-    return "0";
-  }
-}
+    const health  = await getGroupHealth(gid);
+    const roi     = await getGroupROI(gid);
+    const metrics = await getGroupMetrics(gid);
 
-async function getPoolInINR(gid) {
-  try {
-    const inr = await contract.getPoolInINR(gid);
-    return inr.toString();
-  } catch (error) {
-    console.error(`❌ Error getting pool in INR:`, error.message);
-    return "0";
+    // Weighted score:
+    // - average credit score (40%)
+    // - fill % (20%)
+    // - ROI % (20%)
+    // - default rate penalty (20%)
+    const score = Math.round(
+      (health.averageCreditScore / 2) * 0.40 +
+      health.fillPercentage           * 0.20 +
+      Math.min(roi.roiPercentage, 100) * 0.20 -
+      roi.defaultRate                  * 0.20
+    );
+
+    return Math.max(0, Math.min(100, score));
+  } catch (e) {
+    logger.warn(`Investment score failed for group ${gid}: ${e.message}`);
+    return 50;
   }
 }
 
 module.exports = {
-  initContractService,
+  getContract,
+  getProvider,
   getGroupCount,
   getGroupData,
-  getAllGroups,
-  getMembers,
-  getMemberInfo,
-  getTrustScore,
   getGroupMetrics,
   getGroupHealth,
   getGroupROI,
-  getMyInvites,
-  getEMIinINR,
-  getPoolInINR,
+  getMemberInfo,
+  calculateInvestmentScore,
 };

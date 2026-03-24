@@ -1,136 +1,123 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
+/**
+ * server.js - Production-hardened Express backend (v3.0)
+ *
+ * NEW IN V3.0:
+ *   - helmet:           secure HTTP headers
+ *   - express-rate-limit: 100 req/15min per IP
+ *   - .env validation:  crash early with clear error if keys missing
+ *   - cronService:      auto-marks missed EMIs every hour
+ */
+
 require("dotenv").config();
+const express    = require("express");
+const cors       = require("cors");
+const helmet     = require("helmet");
+const rateLimit  = require("express-rate-limit");
+const mongoose   = require("mongoose");
+const logger     = require("./utils/logger");
 
-// Services & Middleware
-const { startEventListener } = require("./services/eventListener");
-const { initContractService } = require("./services/contractService");
-const errorHandler = require("./middleware/errorHandler");
-const logger = require("./utils/logger");
+// ── 1. ENV VALIDATION ─────────────────────────────────────────────
+const REQUIRED_ENV = ["MONGODB_URI", "ALCHEMY_KEY", "CONTRACT_ADDRESS"];
+const missing = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missing.length > 0) {
+  console.error("❌ Missing required environment variables:", missing.join(", "));
+  console.error("   Please create backend/.env with these values.");
+  process.exit(1);
+}
 
-// Routes
-const groupRoutes = require("./routes/groups");
-const historyRoutes = require("./routes/history");
-const adminRoutes = require("./routes/admin");
-const investorRoutes = require("./routes/investor");
-const userRoutes = require("./routes/users");
-const analyticsRoutes = require("./routes/analytics");
-
+// ── 2. APP SETUP ──────────────────────────────────────────────────
 const app = express();
-const PORT = process.env.PORT || 5001;
 
-// ─────────────────────────────────────────────
-// CORS Configuration
-// ─────────────────────────────────────────────
-const corsOptions = {
-  origin: ["http://localhost:3000", "http://localhost:3001"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+// Security headers (helmet)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
+
+// CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
+}));
 
-// ─────────────────────────────────────────────
-// Middleware
-// ─────────────────────────────────────────────
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+app.use(express.json({ limit: "10kb" }));
 
-// Request logging
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    logger.info(`${req.method} ${req.path} - ${res.statusCode} - ${duration}ms`);
-  });
-  next();
+// Global rate limit: 100 requests per 15 minutes per IP
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
 });
+app.use("/api", limiter);
 
-// ─────────────────────────────────────────────
-// Health Check
-// ─────────────────────────────────────────────
+// ── 3. ROUTES ─────────────────────────────────────────────────────
+const groupsRouter    = require("./routes/groups");
+const historyRouter   = require("./routes/history");
+const investorRouter  = require("./routes/investor");
+const analyticsRouter = require("./routes/analytics");
+const adminRouter     = require("./routes/admin");
+const usersRouter     = require("./routes/users");
+
+app.use("/api/groups",    groupsRouter);
+app.use("/api/history",   historyRouter);
+app.use("/api/investor",  investorRouter);
+app.use("/api/analytics", analyticsRouter);
+app.use("/api/admin",     adminRouter);
+app.use("/api/users",     usersRouter);
+
+// ── 4. HEALTH CHECK ───────────────────────────────────────────────
 app.get("/health", (req, res) => {
   res.json({
     status: "✅ Backend running",
-    uptime: process.uptime(),
+    version: "3.0.0",
     timestamp: new Date(),
+    db: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
 
-// ─────────────────────────────────────────────
-// API Routes
-// ─────────────────────────────────────────────
-app.use("/api/groups", groupRoutes);
-app.use("/api/history", historyRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/investor", investorRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/analytics", analyticsRoutes);
-
-// ─────────────────────────────────────────────
-// MongoDB Connection
-// ─────────────────────────────────────────────
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/community-dapp", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => logger.info("✅ MongoDB connected"))
-.catch(err => logger.error("❌ MongoDB connection failed:", err.message));
-
-// ─────────────────────────────────────────────
-// Initialize Services
-// ─────────────────────────────────────────────
-(async () => {
-  try {
-    logger.info("🚀 Initializing services...");
-    
-    // Initialize contract service
-    const contractReady = await initContractService();
-    if (contractReady) {
-      logger.info("✅ Contract service initialized");
-    }
-    
-    // Start event listener
-    startEventListener();
-    logger.info("✅ Event listener started");
-    
-  } catch (error) {
-    logger.error("❌ Service initialization failed:", error.message);
-  }
-})();
-
-// ─────────────────────────────────────────────
-// Error Handler (Last Middleware)
-// ─────────────────────────────────────────────
-app.use(errorHandler);
-
-// ─────────────────────────────────────────────
-// 404 Handler
-// ─────────────────────────────────────────────
+// ── 5. 404 HANDLER ────────────────────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ 
-    error: "❌ Route not found",
-    path: req.path,
-    method: req.method
-  });
+  res.status(404).json({ error: "Route not found" });
 });
 
-// ─────────────────────────────────────────────
-// Start Server
-// ─────────────────────────────────────────────
-app.listen(PORT, () => {
-  logger.info(`🚀 Backend running on http://localhost:${PORT}`);
-  logger.info(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
-  logger.info(`🔗 Contract: ${process.env.CONTRACT_ADDRESS}`);
+// ── 6. ERROR HANDLER ──────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  logger.error(`Unhandled error: ${err.message}`);
+  res.status(500).json({ error: "Internal server error" });
 });
 
-// Graceful shutdown
-process.on("SIGINT", () => {
-  logger.info("🛑 Shutting down gracefully...");
-  mongoose.connection.close();
-  process.exit(0);
-});
+// ── 7. DATABASE + SERVICES STARTUP ───────────────────────────────
+const PORT = process.env.PORT || 5001;
+
+async function startServer() {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    logger.info("✅ MongoDB connected");
+
+    // Start blockchain event listener
+    const { startEventListener } = require("./services/eventListener");
+    await startEventListener();
+    logger.info("✅ Event listener started");
+
+    // Start missed-EMI cron job
+    const { startCronService } = require("./services/cronService");
+    startCronService();
+    logger.info("✅ Cron service started");
+
+    app.listen(PORT, () => {
+      logger.info(`✅ Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    logger.error(`❌ Startup failed: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;

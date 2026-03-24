@@ -1,215 +1,195 @@
 /**
- * APP CONTEXT - GLOBAL STATE MANAGEMENT
- * 
- * Remove prop drilling by providing global access to:
- * - contract (ethers.Contract instance)
- * - account (user's wallet address)
- * - signer (for signing transactions)
- * - provider (ethers provider)
- * - isAdmin (is user the contract owner?)
- * - loading (is web3 initializing?)
- * - notifications (toast messages)
- * - addNotif (function to add notification)
- * 
- * USAGE IN ANY COMPONENT:
- * ────────────────────────────────────────
- * import { useContext } from "react";
- * import { AppContext } from "../context/AppContext";
- * 
- * function MyComponent() {
- *   const { contract, account, addNotif } = useContext(AppContext);
- *   
- *   // Now use contract, account directly!
- *   // No prop drilling needed!
- * }
+ * PASTE LOCATION: src/context/AppContext.js
+ * Replace the entire existing file.
+ *
+ * Production fixes:
+ *  1. Admin fallback used contract.owner() which doesn't exist → now uses contract.admin()
+ *  2. Added proper MetaMask-not-installed handling (no silent failure)
+ *  3. addNotif is now stable (no re-render loop risk)
+ *  4. Exposes disconnect() so the wallet chip can have a working onClick
  */
 
-import { createContext, useState, useEffect, useCallback } from "react";
+import { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
 import { ADDRESS, ABI } from "../contracts/contractConfig";
 
-// ─── CREATE CONTEXT ───────────────────────────────────────────
 export const AppContext = createContext();
 
-// ─── CONTEXT PROVIDER ─────────────────────────────────────────
 export function AppContextProvider({ children }) {
-  
-  // State variables
-  const [contract, setContract]   = useState(null);
-  const [account, setAccount]     = useState(null);
-  const [provider, setProvider]   = useState(null);
-  const [signer, setSigner]       = useState(null);
-  const [isAdmin, setIsAdmin]     = useState(false);
-  const [loading, setLoading]     = useState(true);
+  const [contract,      setContract]      = useState(null);
+  const [account,       setAccount]       = useState(null);
+  const [provider,      setProvider]      = useState(null);
+  const [signer,        setSigner]        = useState(null);
+  const [isAdmin,       setIsAdmin]       = useState(false);
+  const [loading,       setLoading]       = useState(true);
   const [notifications, setNotifications] = useState([]);
 
-  // ─── NOTIFICATION SYSTEM (MOVE HERE - BEFORE initializeWeb3) ──
-  /**
-   * ADD NOTIFICATION
-   * Shows a toast message to user
-   * Auto-removes after duration
-   */
-  const addNotif = useCallback((message, type = "info", duration = 3000) => {
-    const id = Date.now();
-    const notif = { id, message, type };
-    
-    // Add notification to list
-    setNotifications(prev => [...prev, notif]);
-    
-    // Log to console
-    console.log(`[${type.toUpperCase()}] ${message}`);
-    
-    // Auto-remove after duration
-    const timeout = setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    }, duration);
+  // Use a ref so addNotif is stable across renders without needing useCallback deps
+  const notifIdRef = useRef(0);
 
-    return () => clearTimeout(timeout);
+  const addNotif = useCallback((message, type = "info", duration = 4000) => {
+    const id = ++notifIdRef.current;
+    setNotifications(prev => [...prev, { id, message, type }]);
+    if (duration > 0) {
+      setTimeout(() => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+      }, duration);
+    }
+    return id;
   }, []);
 
-  /**
-   * REMOVE NOTIFICATION
-   * Manually remove a notification by ID
-   */
   const removeNotif = useCallback((id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   }, []);
 
-  // ─── INITIALIZE WEB3 ON MOUNT ─────────────────────────────
-  useEffect(() => {
-    initializeWeb3();
-  }, [addNotif]); // ← Add addNotif as dependency
-
-  /**
-   * INITIALIZE WEB3
-   * Connects to MetaMask and initializes contract
-   */
+  // ── Connect / initialize ──────────────────────────────────────
   async function initializeWeb3() {
+    setLoading(true);
     try {
-      console.log("🔌 Initializing Web3...");
-
-      // Check if MetaMask is available
       if (!window.ethereum) {
-        console.warn("⚠️ MetaMask not installed");
-        addNotif("MetaMask not found. Please install it.", "error");
+        addNotif(
+          "MetaMask not found. Install it from metamask.io to use BlockChit.",
+          "error",
+          0 // persistent until dismissed
+        );
         setLoading(false);
         return;
       }
 
-      // Request account access
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (!accounts.length) {
+        addNotif("No accounts returned from MetaMask.", "error");
+        setLoading(false);
+        return;
+      }
+
       const userAccount = accounts[0];
       setAccount(userAccount);
-      console.log(`✅ Connected account: ${userAccount}`);
-      addNotif(`Connected: ${userAccount.slice(0,6)}...${userAccount.slice(-4)}`, "success");
 
-      // Create provider (read-only connection to blockchain)
       const p = new ethers.BrowserProvider(window.ethereum);
       setProvider(p);
-      console.log("✅ Provider initialized");
 
-      // Create signer (for signing transactions)
       const s = await p.getSigner();
       setSigner(s);
-      console.log("✅ Signer initialized");
 
-      // Create contract instance (with signer for write operations)
       const c = new ethers.Contract(ADDRESS, ABI, s);
       setContract(c);
-      console.log(`✅ Contract initialized at ${ADDRESS}`);
 
-      // ─── CHECK IF USER IS ADMIN (FROM BACKEND API) ──────────────
-      console.log("🔍 Checking admin status from backend...");
-      console.log("📍 Backend URL: http://localhost:5001/api/admin/check/" + userAccount);
+      addNotif(
+        `Connected: ${userAccount.slice(0, 6)}...${userAccount.slice(-4)}`,
+        "success"
+      );
+
+      // ── Check admin status ──────────────────────────────────
+      // Strategy: try backend first (faster, no RPC call), fall back to chain.
+      let adminResolved = false;
 
       try {
-        const response = await fetch(
-          `http://localhost:5001/api/admin/check/${userAccount}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-          }
+        const res  = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL || "http://localhost:5001"}/api/admin/check/${userAccount}`,
+          { signal: AbortSignal.timeout(3000) }
         );
-        
-        console.log(`📊 Backend response status: ${response.status}`);
-        
-        if (!response.ok) {
-          throw new Error(`Backend error: ${response.status}`);
+        if (res.ok) {
+          const data = await res.json();
+          setIsAdmin(data.isAdmin);
+          adminResolved = true;
+          if (data.isAdmin) addNotif("Admin mode enabled.", "success");
         }
-        
-        const data = await response.json();
-        setIsAdmin(data.isAdmin);
-        console.log(`✅ Admin status: ${data.isAdmin ? "YES ✓" : "NO ✗"}`);
-        
-        if (data.isAdmin) {
-          addNotif("👑 Admin mode enabled", "success");
-        }
-        
-      } catch (err) {
-        console.warn("⚠️ Backend check failed, falling back to contract check...", err.message);
-        addNotif("Backend unavailable, using contract fallback", "warning");
-        
-        // Fallback: Check contract owner if backend fails
+      } catch {
+        // Backend unreachable — fall through to on-chain check
+      }
+
+      if (!adminResolved) {
         try {
-          const owner = await c.owner();
-          const userIsAdmin = owner.toLowerCase() === userAccount.toLowerCase();
+          // FIX: use contract.admin() — the contract has `address public admin`,
+          // NOT an owner() function. Previous code called owner() which reverts.
+          const onChainAdmin = await c.admin();
+          const userIsAdmin  = onChainAdmin.toLowerCase() === userAccount.toLowerCase();
           setIsAdmin(userIsAdmin);
-          console.log(`🔑 Admin (from contract): ${userIsAdmin ? "YES" : "NO"}`);
-          
-          if (userIsAdmin) {
-            addNotif("👑 Admin mode enabled (contract)", "success");
-          }
+          if (userIsAdmin) addNotif("Admin mode enabled (on-chain).", "success");
         } catch (e) {
-          console.warn("⚠️ Could not fetch owner:", e.message);
+          console.warn("Could not fetch admin address from contract:", e.message);
           setIsAdmin(false);
         }
       }
 
-      // Listen for account changes
+      // ── Listen for wallet/chain changes ──────────────────────
+      window.ethereum.removeAllListeners?.("accountsChanged");
+      window.ethereum.removeAllListeners?.("chainChanged");
+
       window.ethereum.on("accountsChanged", (newAccounts) => {
-        if (newAccounts.length > 0) {
-          console.log(`🔄 Account changed to: ${newAccounts[0]}`);
-          setAccount(newAccounts[0]);
-          addNotif("Account changed, reloading...", "info");
-          window.location.reload(); // Reload to reset state
+        if (newAccounts.length === 0) {
+          // User disconnected all accounts
+          setAccount(null);
+          setContract(null);
+          setSigner(null);
+          setIsAdmin(false);
+          addNotif("Wallet disconnected.", "info");
+        } else {
+          addNotif("Account changed — reloading.", "info");
+          window.location.reload();
         }
       });
 
-      // Listen for chain changes
       window.ethereum.on("chainChanged", () => {
-        console.log("🔄 Chain changed, reloading...");
-        addNotif("Chain changed, reloading...", "info");
+        addNotif("Network changed — reloading.", "info");
         window.location.reload();
       });
 
     } catch (err) {
-      console.error("❌ Web3 initialization error:", err);
-      addNotif("Failed to connect wallet: " + err.message, "error");
+      // User rejected MetaMask prompt or other error
+      const msg = err.code === 4001
+        ? "Connection cancelled — you rejected the MetaMask prompt."
+        : `Failed to connect: ${err.message}`;
+      addNotif(msg, "error");
+      console.error("Web3 init error:", err);
     } finally {
       setLoading(false);
     }
   }
 
-  // ─── CONTEXT VALUE ────────────────────────────────────────
+  // ── Disconnect ────────────────────────────────────────────────
+  function disconnect() {
+    setAccount(null);
+    setContract(null);
+    setSigner(null);
+    setProvider(null);
+    setIsAdmin(false);
+    addNotif("Disconnected.", "info");
+    // MetaMask doesn't support programmatic disconnect via eth_requestAccounts
+    // revocation — user must disconnect in MetaMask itself. We clear local state.
+  }
+
+  useEffect(() => {
+    // Auto-connect if MetaMask already has permission (no popup)
+    if (window.ethereum) {
+      window.ethereum
+        .request({ method: "eth_accounts" })
+        .then((accounts) => {
+          if (accounts.length > 0) {
+            initializeWeb3();
+          } else {
+            setLoading(false);
+          }
+        })
+        .catch(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const value = {
-    // Web3 connections
     contract,
     account,
     provider,
     signer,
     isAdmin,
-    
-    // Loading state
     loading,
-    
-    // Notifications
     notifications,
     addNotif,
     removeNotif,
+    initializeWeb3,
+    disconnect,
   };
 
   return (

@@ -277,6 +277,9 @@ export default function VotingScreen({
             <div style={{ color: "var(--text2)", fontSize: 13 }}>
               {totalVotes} of {group?.members?.length} votes cast
             </div>
+            <div style={{ color: "var(--text3)", fontSize: 11, marginTop: 4 }}>
+              Closes when: All members vote OR 2-day window expires
+            </div>
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ 
@@ -303,6 +306,13 @@ export default function VotingScreen({
         }}>
           <div style={{ color: "var(--green)", fontWeight: 600, fontSize: 15, marginBottom: 6 }}>
             ✅ Voting Complete {wasTie && "(Tie broken by blockchain randomness)"}
+          </div>
+          <div style={{ color: "var(--text3)", fontSize: 12, marginBottom: 8 }}>
+            {totalVotes === group?.members?.length 
+              ? "📊 All members voted" 
+              : "⏰ Voting window expired"}
+            {" — "}
+            {totalVotes} of {group?.members?.length} votes cast
           </div>
           <div style={{ color: "var(--text2)", fontSize: 13 }}>
             Selected borrower:

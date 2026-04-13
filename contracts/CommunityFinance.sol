@@ -515,6 +515,23 @@ contract CommunityFinance is ReentrancyGuard, Pausable {
         emit VoteCast(gid, msg.sender, candidate);
     }
 
+    /**
+     * RESOLVE VOTE - Finalize borrower selection
+     * 
+     * Can be called by ANY member only when BOTH conditions are true:
+     * 1. Voting state is OPEN (hasn't been resolved yet)
+     * 2. AND either:
+     *    a) 2-day voting window has EXPIRED (block.timestamp > voteEndTime)
+     *    b) OR all members have cast their votes (totalCast == members.length)
+     * 
+     * Borrower selection:
+     * - If no votes cast: members[0] becomes borrower
+     * - If votes cast: member with most votes wins
+     * - If tie: blockchain randomness breaks tie
+     * 
+     * NOTE: Voting can close with partial votes when window expires.
+     * This prevents voting from being stuck indefinitely.
+     */
     function resolveVote(uint gid)
         external
         whenNotPaused

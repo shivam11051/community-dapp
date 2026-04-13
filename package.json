@@ -2,7 +2,7 @@
   "name": "blockchit-community-dapp",
   "version": "2.1.0",
   "private": true,
-  "homepage": "https://shivam11051.github.io/community-dapp",
+  "homepage": "https://shivam11051.github.io/community-dapp/",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",

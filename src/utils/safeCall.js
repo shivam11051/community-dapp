@@ -98,9 +98,14 @@ export async function safeCall(fn, options = {}) {
       } catch (err) {
         lastError = err;
         
-        // Log the error
+        // Detect error type for better messaging
+        const isRateLimit = err.code === -32005 || err.message?.includes("rate limited") || err.message?.includes("429");
+        const isContractError = err.reason && err.reason.startsWith("E:");
+        
+        // Log the error with context
+        const errorType = isRateLimit ? "🚫 RATE LIMIT" : isContractError ? "⛔ CONTRACT" : "⚠️";
         console.warn(
-          `⚠️ ${label} failed (attempt ${attempt}/${retry}): ${err.message}`
+          `${errorType} ${label} failed (attempt ${attempt}/${retry}): ${err.message}`
         );
   
         // If this was the last attempt, return fallback
@@ -119,8 +124,14 @@ export async function safeCall(fn, options = {}) {
           return fallback;
         }
   
-        // Aggressive backoff for better UX: 200ms, 500ms, 1s
-        const waitTime = attempt === 1 ? 200 : attempt === 2 ? 500 : 1000;
+        // Longer backoff for rate limits: 500ms, 1.25s, 2.5s
+        // Regular backoff: 200ms, 500ms, 1s
+        let waitTime;
+        if (isRateLimit) {
+          waitTime = attempt === 1 ? 500 : attempt === 2 ? 1250 : 2500;
+        } else {
+          waitTime = attempt === 1 ? 200 : attempt === 2 ? 500 : 1000;
+        }
         console.log(`⏸️  Retrying in ${waitTime}ms...`);
         await new Promise(r => setTimeout(r, waitTime));
       }

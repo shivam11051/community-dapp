@@ -77,12 +77,26 @@ function AppContent() {
   // LOAD GLOBAL STATE WHEN CONTRACT IS READY
   // ════════════════════════════════════════════════════════════════
 
+  const listenersRef = useRef(false);
+
   useEffect(() => {
     if (contract && account && !contextLoading) {
       loadGlobalState();
-      setupEventListeners();
+      // Setup listeners only once per contract instance
+      if (!listenersRef.current) {
+        setupEventListeners();
+        listenersRef.current = true;
+      }
       getChainId();
     }
+
+    // Cleanup listeners on unmount or when contract changes
+    return () => {
+      if (contract && listenersRef.current) {
+        cleanupEventListeners();
+        listenersRef.current = false;
+      }
+    };
   }, [contract, account, contextLoading]);
 
   /**
@@ -210,120 +224,129 @@ function AppContent() {
   }
 
   // ════════════════════════════════════════════════════════════════
-  // EVENT LISTENERS
+  // EVENT LISTENERS WITH RATE LIMIT PROTECTION
   // ════════════════════════════════════════════════════════════════
 
   function setupEventListeners() {
     if (!contract || !account) return;
 
-    console.log("🔊 Setting up event listeners...");
+    console.log("🔊 Setting up event listeners (rate limit safe - staggered)...");
 
-    // Group events
-    contract.on("GroupApproved", (gid) => {
-      addNotif(`✅ Group #${gid} approved by admin!`, NOTIF.SUCCESS);
-      loadGlobalState();
-    });
-
-    contract.on("GroupRejected", (gid) => {
-      addNotif(`❌ Group #${gid} was rejected.`, NOTIF.WARNING);
-      loadGlobalState();
-    });
-
-    contract.on("MemberJoined", (gid, member) => {
-      if (member.toLowerCase() !== account.toLowerCase()) {
-        addNotif(`👥 New member joined Group #${gid}`, NOTIF.INFO);
-      }
-      refreshGroup(Number(gid));
-    });
-
-    // Voting events
-    contract.on("VotingStarted", (gid) => {
-      addNotif(`🗳️ Voting started in Group #${gid}!`, NOTIF.INFO);
-      refreshGroup(Number(gid));
-    });
-
-    contract.on("VoteCast", (gid, voter) => {
-      if (voter.toLowerCase() !== account.toLowerCase()) {
-        addNotif(`🗳️ A vote was cast in Group #${gid}`, NOTIF.INFO);
-      }
-    });
-
-    contract.on("BorrowerSelected", (gid, borrower, wasTie) => {
-      const msg = wasTie
-        ? `Borrower selected by tiebreaker in Group #${gid}`
-        : `Borrower selected by vote in Group #${gid}`;
-      addNotif(msg, NOTIF.SUCCESS);
-      refreshGroup(Number(gid));
-    });
-
-    // Loan events
-    contract.on("LoanReleased", (gid, borrower, amount) => {
-      if (borrower.toLowerCase() === account.toLowerCase()) {
-        addNotif(`💰 Loan of ${formatEther(amount)} ETH released to you!`, NOTIF.SUCCESS, 0);
-      }
-      refreshGroup(Number(gid));
-    });
-
-    contract.on("EMIPaid", (gid, borrower, amount, month, lateFee) => {
-      const fee = Number(lateFee) > 0 ? ` (late fee: ${formatEther(lateFee)} ETH)` : "";
-      addNotif(`✅ EMI #${month} paid in Group #${gid}${fee}`, NOTIF.INFO);
-      refreshGroup(Number(gid));
-    });
-
-    // Credit score
-    contract.on("CreditUpdated", (gid, member, newScore) => {
-      if (member.toLowerCase() === account.toLowerCase()) {
-        addNotif(`⭐ Your credit score updated to ${newScore}`, NOTIF.INFO);
-      }
-    });
-
-    // Profit events
-    contract.on("ProfitWithdrawn", (gid, member, amount) => {
-      if (member.toLowerCase() === account.toLowerCase()) {
-        addNotif(`💸 Profit of ${formatEther(amount)} ETH withdrawn!`, NOTIF.SUCCESS);
-      }
-    });
-
-    // Emergency events
-    contract.on("EmergencyRequested", (gid, rid, requester, amount, reason) => {
-      if (requester.toLowerCase() !== account.toLowerCase()) {
-        addNotif(`🚨 Emergency request in Group #${gid}: "${reason}"`, NOTIF.WARNING, 0);
-      }
-    });
-
-    contract.on("EmergencyResolved", (gid, rid, approved) => {
-      addNotif(
-        `🚨 Emergency #${rid} in Group #${gid} ${approved ? "APPROVED" : "REJECTED"}`,
-        approved ? NOTIF.SUCCESS : NOTIF.WARNING
-      );
-    });
-
-    contract.on("EmergencyReleased", (gid, rid, requester, amount) => {
-      if (requester.toLowerCase() === account.toLowerCase()) {
-        addNotif(`💰 Emergency funds of ${formatEther(amount)} ETH sent to you!`, NOTIF.SUCCESS, 0);
-      }
-    });
-
-    // Kick events
-    contract.on("KickRaised", (gid, kid, target) => {
-      if (target.toLowerCase() === account.toLowerCase()) {
-        addNotif(`⚠️ A kick request has been raised against you in Group #${gid}!`, NOTIF.ERROR, 0);
-      } else {
-        addNotif(`⚠️ Kick request raised in Group #${gid}`, NOTIF.WARNING);
-      }
-    });
-
-    contract.on("KickResolved", (gid, kid, target, kicked) => {
-      if (target.toLowerCase() === account.toLowerCase()) {
+    // Define all listeners as tuples to attach with delays
+    const listeners = [
+      ["GroupApproved", (gid) => {
+        addNotif(`✅ Group #${gid} approved by admin!`, NOTIF.SUCCESS);
+        loadGlobalState();
+      }],
+      ["GroupRejected", (gid) => {
+        addNotif(`❌ Group #${gid} was rejected.`, NOTIF.WARNING);
+        loadGlobalState();
+      }],
+      ["MemberJoined", (gid, member) => {
+        if (member.toLowerCase() !== account.toLowerCase()) {
+          addNotif(`👥 New member joined Group #${gid}`, NOTIF.INFO);
+        }
+        refreshGroup(Number(gid));
+      }],
+      ["VotingStarted", (gid) => {
+        addNotif(`🗳️ Voting started in Group #${gid}!`, NOTIF.INFO);
+        refreshGroup(Number(gid));
+      }],
+      ["VoteCast", (gid, voter) => {
+        if (voter.toLowerCase() !== account.toLowerCase()) {
+          addNotif(`🗳️ A vote was cast in Group #${gid}`, NOTIF.INFO);
+        }
+      }],
+      ["BorrowerSelected", (gid, borrower, wasTie) => {
+        const msg = wasTie
+          ? `Borrower selected by tiebreaker in Group #${gid}`
+          : `Borrower selected by vote in Group #${gid}`;
+        addNotif(msg, NOTIF.SUCCESS);
+        refreshGroup(Number(gid));
+      }],
+      ["LoanReleased", (gid, borrower, amount) => {
+        if (borrower.toLowerCase() === account.toLowerCase()) {
+          addNotif(`💰 Loan of ${formatEther(amount)} ETH released to you!`, NOTIF.SUCCESS, 0);
+        }
+        refreshGroup(Number(gid));
+      }],
+      ["EMIPaid", (gid, borrower, amount, month, lateFee) => {
+        const fee = Number(lateFee) > 0 ? ` (late fee: ${formatEther(lateFee)} ETH)` : "";
+        addNotif(`✅ EMI #${month} paid in Group #${gid}${fee}`, NOTIF.INFO);
+        refreshGroup(Number(gid));
+      }],
+      ["CreditUpdated", (gid, member, newScore) => {
+        if (member.toLowerCase() === account.toLowerCase()) {
+          addNotif(`⭐ Your credit score updated to ${newScore}`, NOTIF.INFO);
+        }
+      }],
+      ["ProfitWithdrawn", (gid, member, amount) => {
+        if (member.toLowerCase() === account.toLowerCase()) {
+          addNotif(`💸 Profit of ${formatEther(amount)} ETH withdrawn!`, NOTIF.SUCCESS);
+        }
+      }],
+      ["EmergencyRequested", (gid, rid, requester, amount, reason) => {
+        if (requester.toLowerCase() !== account.toLowerCase()) {
+          addNotif(`🚨 Emergency request in Group #${gid}: "${reason}"`, NOTIF.WARNING, 0);
+        }
+      }],
+      ["EmergencyResolved", (gid, rid, approved) => {
         addNotif(
-          kicked
-            ? `❌ You were removed from Group #${gid}`
-            : `✅ Kick vote failed — you stay in Group #${gid}`,
-          kicked ? NOTIF.ERROR : NOTIF.SUCCESS,
-          0
+          `🚨 Emergency #${rid} in Group #${gid} ${approved ? "APPROVED" : "REJECTED"}`,
+          approved ? NOTIF.SUCCESS : NOTIF.WARNING
         );
-      }
+      }],
+      ["EmergencyReleased", (gid, rid, requester, amount) => {
+        if (requester.toLowerCase() === account.toLowerCase()) {
+          addNotif(`💰 Emergency funds of ${formatEther(amount)} ETH sent to you!`, NOTIF.SUCCESS, 0);
+        }
+      }],
+      ["KickRaised", (gid, kid, target) => {
+        if (target.toLowerCase() === account.toLowerCase()) {
+          addNotif(`⚠️ A kick request has been raised against you in Group #${gid}!`, NOTIF.ERROR, 0);
+        } else {
+          addNotif(`⚠️ Kick request raised in Group #${gid}`, NOTIF.WARNING);
+        }
+      }],
+      ["KickResolved", (gid, kid, target, kicked) => {
+        if (target.toLowerCase() === account.toLowerCase()) {
+          addNotif(
+            kicked
+              ? `❌ You were removed from Group #${gid}`
+              : `✅ Kick vote failed — you stay in Group #${gid}`,
+            kicked ? NOTIF.ERROR : NOTIF.SUCCESS,
+            0
+          );
+        }
+      }],
+    ];
+
+    // Attach listeners with staggered delays to prevent rate limiting
+    listeners.forEach(([eventName, handler], index) => {
+      setTimeout(() => {
+        try {
+          contract.on(eventName, handler);
+          console.log(`  ✓ Listener added: ${eventName}`);
+        } catch (err) {
+          // Silently fail - rate limit will be caught by user interaction
+          console.warn(`  ⚠️ Listener failed: ${eventName}`, err.code);
+        }
+      }, index * 150); // 150ms stagger between each listener
     });
+  }
+
+  /**
+   * CLEANUP EVENT LISTENERS
+   * Prevents duplicate filters and rate limiting issues
+   */
+  function cleanupEventListeners() {
+    if (!contract) return;
+    try {
+      contract.removeAllListeners();
+      console.log("🔇 All event listeners removed");
+    } catch (err) {
+      console.warn("⚠️ Error cleaning listeners:", err.message);
+    }
   }
 
   // ────────────────────────────────────────────────────────────────
@@ -384,8 +407,23 @@ function AppContent() {
         return false;
       }
     } catch (err) {
-      const msg = err?.reason || err?.message || "Transaction failed";
-      addNotif(errorMsg || msg, NOTIF.ERROR);
+      // Parse error message for better user feedback
+      const errorMsg = err?.reason || err?.message || "Transaction failed";
+      
+      // Handle specific contract errors
+      let userMsg = errorMsg;
+      if (errorMsg.includes("E:28")) {
+        userMsg = "❌ Voting is already in progress or completed. Please wait for it to resolve before starting a new vote.";
+      } else if (errorMsg.includes("E:")) {
+        // Other contract errors (E:26, E:27, E:29, E:30, etc.)
+        userMsg = `❌ Contract validation failed: ${errorMsg}`;
+      } else if (errorMsg.includes("rate limited") || errorMsg.includes("429")) {
+        userMsg = "⚠️ RPC provider rate limited. Please try again in a moment.";
+      } else if (errorMsg.includes("reverted")) {
+        userMsg = `❌ Transaction reverted: ${errorMsg}`;
+      }
+      
+      addNotif(userMsg, NOTIF.ERROR);
       return false;
     } finally {
       setTxPending(false);

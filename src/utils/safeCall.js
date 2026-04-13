@@ -178,8 +178,11 @@ export async function safeCall(fn, options = {}) {
     try {
       console.log(`📤 Sending ${label}...`);
   
+      // Handle both function and Promise inputs
+      const txFn = typeof txPromise === "function" ? txPromise : () => txPromise;
+  
       // Send transaction safely
-      const tx = await safeCall(() => txPromise, {
+      const tx = await safeCall(txFn, {
         label,
         timeout,
         fallback: null,

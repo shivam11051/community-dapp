@@ -361,7 +361,7 @@ function AppContent() {
     setTxPending(true);
 
     try {
-      const receipt = await safeTransaction(() => fn(), {
+      const receipt = await safeTransaction(fn(), {
         label: successMsg || "Transaction",
         confirmations: 1,
         timeout: 60000,

@@ -414,12 +414,26 @@ function AppContent() {
       let userMsg = errorMsg;
       if (errorMsg.includes("E:28")) {
         userMsg = "❌ Voting is already in progress or completed. Please wait for it to resolve before starting a new vote.";
+      } else if (errorMsg.includes("E:27")) {
+        userMsg = "❌ Cannot start voting yet. A borrower is already selected with an active/pending loan. Complete all EMI payments first before starting a new voting round.";
       } else if (errorMsg.includes("E:37")) {
         userMsg = "❌ Borrower not set. Voting must be resolved first before releasing funds.";
       } else if (errorMsg.includes("E:29")) {
         userMsg = "❌ A loan is already active. Previous EMIs must be completed first.";
+      } else if (errorMsg.includes("E:36")) {
+        userMsg = "❌ Cannot resolve voting yet. Either wait for the voting window to close or all members must vote.";
+      } else if (errorMsg.includes("E:31")) {
+        userMsg = "❌ Voting is not open. Start voting first.";
+      } else if (errorMsg.includes("E:32")) {
+        userMsg = "❌ Voting period has ended. Click 'Resolve & Select Borrower' to finalize.";
+      } else if (errorMsg.includes("E:33")) {
+        userMsg = "❌ You have already voted in this round.";
+      } else if (errorMsg.includes("E:34")) {
+        userMsg = "❌ You cannot vote for yourself.";
+      } else if (errorMsg.includes("E:35")) {
+        userMsg = "❌ The candidate is not a member of this group.";
       } else if (errorMsg.includes("E:")) {
-        // Other contract errors (E:26, E:27, E:30, etc.)
+        // Other contract errors
         userMsg = `❌ Contract validation failed: ${errorMsg}`;
       } else if (errorMsg.includes("rate limited") || errorMsg.includes("429")) {
         userMsg = "⚠️ RPC provider rate limited. Please try again in a moment.";

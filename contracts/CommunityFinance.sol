@@ -469,6 +469,26 @@ contract CommunityFinance is ReentrancyGuard, Pausable {
         onlyMemberOf(gid)
     {
         Group storage g = groups[gid];
+        
+        /**
+         * VOTING REQUIREMENTS:
+         * - E:26: Group must be full (members == maxSize)
+         * - E:27: No active borrower (borrower == address(0)) — cleared when previous loan completes
+         * - E:28: Voting not already open (voteRound.state == NONE)
+         * - E:29: No active loan (loan not in progress)
+         * - E:30: Group in ACTIVE or OPEN status
+         * 
+         * VOTING LIFECYCLE:
+         * 1. startVoting() → Opens voting window (2 days), resets votes
+         * 2. castVote() → Members vote (can't vote for self)
+         * 3. resolveVote() → Closes voting, selects winner by vote count
+         * 4. releaseFunds() → Creates active loan, transfers principal to borrower
+         * 5. payEMI() → Members/borrower pay monthly installments
+         * 6. Loan completes → borrower = address(0), voteRound.state = NONE
+         * 7. Loop → startVoting() again (start step 1)
+         *
+         * IMPORTANT: Cannot start new voting until previous loan is fully repaid!
+         */
         require(g.members.length == g.maxSize,        "E:26");
         require(g.borrower == address(0),             "E:27");
         require(g.voteRound.state == VoteState.NONE,  "E:28");

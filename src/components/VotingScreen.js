@@ -253,9 +253,20 @@ export default function VotingScreen({
       {/* ─── STATUS BANNER ────────────────────────────────────────── */}
       {voteState === 0 && (
         <div className="info-box" style={{ marginBottom: 20 }}>
-          No active vote. {group?.members?.length === group?.maxSize
-            ? "Group is full — any member can start voting."
-            : `Waiting for group to fill up (${group?.members?.length}/${group?.maxSize} members).`}
+          {group?.members?.length === group?.maxSize
+            ? "🟢 Group is full — any member can start voting to select the borrower."
+            : `⏳ Waiting for group to fill up (${group?.members?.length}/${group?.maxSize} members) before voting can begin.`}
+        </div>
+      )}
+
+      {voteState === 0 && group?.borrower && group?.borrower !== "0x0000000000000000000000000000000000000000" && (
+        <div className="info-box" style={{ marginBottom: 20, background: "rgba(251,146,60,.08)", borderColor: "rgba(251,146,60,.3)" }}>
+          <div style={{ color: "var(--amber)", fontWeight: 600, marginBottom: 6 }}>
+            ⏳ Active Loan in Progress
+          </div>
+          <div style={{ color: "var(--text2)", fontSize: 13 }}>
+            {group?.name} currently has an active borrower. Members must complete all EMI payments before a new voting round can start.
+          </div>
         </div>
       )}
 

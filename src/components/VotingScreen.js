@@ -327,7 +327,7 @@ export default function VotingScreen({
             {formatAddress(winner)}
             {winner.toLowerCase() === account.toLowerCase() && " 🎉 (You!)"}
           </div>
-          {group?.borrower === "0x0000000000000000000000000000000000000000" && (
+          {group?.borrower && group?.borrower !== "0x0000000000000000000000000000000000000000" && (
             <button
               className="btn-primary"
               style={{ marginTop: 12 }}

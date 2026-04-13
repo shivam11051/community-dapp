@@ -414,8 +414,12 @@ function AppContent() {
       let userMsg = errorMsg;
       if (errorMsg.includes("E:28")) {
         userMsg = "❌ Voting is already in progress or completed. Please wait for it to resolve before starting a new vote.";
+      } else if (errorMsg.includes("E:37")) {
+        userMsg = "❌ Borrower not set. Voting must be resolved first before releasing funds.";
+      } else if (errorMsg.includes("E:29")) {
+        userMsg = "❌ A loan is already active. Previous EMIs must be completed first.";
       } else if (errorMsg.includes("E:")) {
-        // Other contract errors (E:26, E:27, E:29, E:30, etc.)
+        // Other contract errors (E:26, E:27, E:30, etc.)
         userMsg = `❌ Contract validation failed: ${errorMsg}`;
       } else if (errorMsg.includes("rate limited") || errorMsg.includes("429")) {
         userMsg = "⚠️ RPC provider rate limited. Please try again in a moment.";

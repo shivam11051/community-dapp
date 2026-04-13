@@ -507,7 +507,7 @@ export default function MemberDashboard({
               🗳️ Start Voting
             </button>
           )}
-          {group?.status === 2 && group?.borrower === "0x0000000000000000000000000000000000000000" && (
+          {group?.status === 2 && group?.borrower && group?.borrower !== "0x0000000000000000000000000000000000000000" && (
             <button className="btn-primary" onClick={() => actions.releaseFunds(gid)} disabled={txPending}>
               💸 Release Funds
             </button>

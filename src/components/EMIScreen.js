@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatEther } from "ethers";
 import { eventCache } from "../utils/eventCache";
 import { formatETH } from "../utils/format";
@@ -18,9 +18,19 @@ export default function EMIScreen({
   const [countdown,  setCountdown]  = useState({ d:0, h:0, m:0, s:0 });
   const [history,    setHistory]    = useState([]);
 
+  // Prevent concurrent history loads
+  const historyLoadingRef = useRef(false);
+
   // ─── MAIN LOAD FUNCTION ──────────────────────────────────────
   useEffect(() => { 
     if (contract && gid) load(); 
+  }, [contract, gid]);
+
+  // ─── LOAD EMI HISTORY (Separate from main load, with deduplication) ──
+  useEffect(() => { 
+    if (contract && gid && !historyLoadingRef.current) {
+      loadEMIHistory(); 
+    }
   }, [contract, gid]);
 
   // ─── COUNTDOWN TIMER ──────────────────────────────────────────
@@ -74,10 +84,6 @@ export default function EMIScreen({
         setNextDue(Number(due));
         setRemaining(Number(rem));
       }
-
-      // ─── Load EMI Payment History with SMART CACHING ─────────
-      await loadEMIHistory();
-
     } catch (err) {
       console.error("❌ EMIScreen load error:", err);
       addNotif("Failed to load EMI data", "error");
@@ -87,27 +93,40 @@ export default function EMIScreen({
   }
 
   /**
-   * LOAD EMI HISTORY WITH SMART CACHING
+   * LOAD EMI HISTORY WITH SMART CACHING & DEDUPLICATION
    * 
    * How it works:
    * 1. Get current block number
    * 2. Ask cache: "What blocks should I query?"
    * 3. Query only NEW blocks since last time
    * 4. Update cache for next time
+   * 5. Prevent concurrent loads with a ref flag
    * 
    * Result: First load = 5 seconds, Next load = 0.5 seconds ⚡
    */
   async function loadEMIHistory() {
+    // ✅ Prevent concurrent loads
+    if (historyLoadingRef.current) {
+      console.warn("⚠️ History load already in progress");
+      return;
+    }
+
     if (!contract) {
       console.warn("⚠️ Contract not available");
       return;
     }
 
+    historyLoadingRef.current = true;
+
     try {
       console.log(`🔄 Loading EMI history for group ${gid}...`);
 
       // Step 1: Get current block number
-      const currentBlock = await contract.runner.provider.getBlockNumber();
+      const currentBlock = await contract.runner?.provider?.getBlockNumber?.();
+      if (!currentBlock) {
+        console.warn("⚠️ Could not get block number");
+        return;
+      }
       console.log(`📍 Current block: ${currentBlock}`);
 
       // Step 2: Ask cache: "What blocks should we query?"
@@ -128,16 +147,24 @@ export default function EMIScreen({
       // Step 4: Update cache with the block we just queried
       eventCache.setLastBlock(`EMIPaid_${gid}`, toBlock);
 
-      // Step 5: Format events for display
+      // Step 5: Format events for display with error handling
       const myEvents = events
-        .map(e => ({
-          borrower: e.args[1],
-          amount: formatEther(e.args[3]),        // args[3] = amount
-          month: Number(e.args[2]),              // args[2] = month
-          lateFee: formatEther(e.args[4]),       // args[4] = lateFee
-          block: e.blockNumber,
-          txHash: e.transactionHash,
-        }))
+        .map(e => {
+          try {
+            return {
+              borrower: e.args?.[1],
+              amount: formatEther(e.args?.[3] || "0"),        // args[3] = amount
+              month: Number(e.args?.[2] || "0"),              // args[2] = month
+              lateFee: formatEther(e.args?.[4] || "0"),       // args[4] = lateFee
+              block: e.blockNumber,
+              txHash: e.transactionHash,
+            };
+          } catch (err) {
+            console.warn("⚠️ Failed to parse EMI event:", err);
+            return null;
+          }
+        })
+        .filter(e => e !== null)
         .reverse(); // Show newest first
 
       // Step 6: Update state to display in UI
@@ -146,6 +173,8 @@ export default function EMIScreen({
     } catch (error) {
       console.error("❌ Error loading EMI history:", error);
       addNotif("Failed to load payment history", "error");
+    } finally {
+      historyLoadingRef.current = false;
     }
   }
 

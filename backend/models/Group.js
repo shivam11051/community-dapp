@@ -19,7 +19,7 @@ const groupSchema = new mongoose.Schema({
   },
   status: {
     type: Number,
-    enum: [0, 1, 2, 3], // OPEN, ACTIVE, DEFAULTED, CLOSED
+    enum: [0, 1, 2, 3], // PENDING, OPEN, ACTIVE, CLOSED
     default: 0,
     index: true,
   },

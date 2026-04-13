@@ -46,40 +46,57 @@ export default function MemberDashboard({
 
   async function load() {
     setLoading(true);
+    const startTime = performance.now();
     try {
       // Always fetch fresh data — cache may be stale after members join/leave
       const g = await loadGroupRaw();
       setGroup(g);
 
       const [score, missed, onTime, late] = await contract.getMemberInfo(gid, account);
-      setMemberInfo({ score: Number(score), missed: Number(missed), onTime: Number(onTime), late: Number(late) });
+      const memberInfo = { score: Number(score), missed: Number(missed), onTime: Number(onTime), late: Number(late) };
+      setMemberInfo(memberInfo);
+      console.log(`✅ Member Info: Score=${memberInfo.score}, Missed=${memberInfo.missed}, OnTime=${memberInfo.onTime}, Late=${memberInfo.late}`);
 
       const profitRaw = await contract.getProfitBalance(gid, account);
-      setProfit(formatEther(profitRaw));
+      const profitEth = formatEther(profitRaw);
+      setProfit(profitEth);
+      console.log(`💰 Profit Balance: ${profitRaw} wei → ${profitEth} ETH`);
 
       if (g.status === 2 && g.borrower !== "0x0000000000000000000000000000000000000000") {
         const emiRaw  = await contract.getEMI(gid);
         const lateRaw = await contract.getLateFee(gid);
         const due     = await contract.getNextDueTime(gid);
         const rem     = await contract.getRemainingMonths(gid);
-        setEmi(formatEther(emiRaw));
-        setLateFee(formatEther(lateRaw));
+        
+        const emiEth = formatEther(emiRaw);
+        const lateEth = formatEther(lateRaw);
+        
+        setEmi(emiEth);
+        setLateFee(lateEth);
         setNextDue(Number(due));
         setRemaining(Number(rem));
+        
+        console.log(`📋 EMI: ${emiRaw} wei → ${emiEth} ETH, Late Fee: ${lateRaw} wei → ${lateEth} ETH, Remaining: ${rem} months`);
       }
 
       // Load invite list if creator of private group
       if (g?.isPrivate && g?.creator?.toLowerCase() === account.toLowerCase()) {
         try {
           const invited = await contract.getInvitedList(gid);
-          setInviteList(Array.from(invited));
+          const inviteListArr = Array.from(invited);
+          setInviteList(inviteListArr);
+          console.log(`✉️  Invite List: ${inviteListArr.length} invited members`);
         } catch (e) {
-          console.error("Failed to load invite list:", e);
+          console.error("⚠️ Failed to load invite list:", e.message);
           setInviteList([]);
         }
       }
+
+      const elapsed = (performance.now() - startTime).toFixed(2);
+      console.log(`✅ MemberDashboard loaded successfully in ${elapsed}ms`);
     } catch (err) {
-      console.error("MemberDashboard load:", err);
+      const elapsed = (performance.now() - startTime).toFixed(2);
+      console.error(`❌ MemberDashboard load failed after ${elapsed}ms:`, err.message);
     } finally {
       setLoading(false);
     }
@@ -116,17 +133,25 @@ export default function MemberDashboard({
     };
   }
 
-  function fmt(raw) {
+  function fmt(raw, label = "") {
     try {
       let eth;
-      if (raw === null || raw === undefined) return currency === "INR" ? "₹0" : "0.0000 ETH";
+      if (raw === null || raw === undefined) {
+        console.warn(`⚠️ Format [${label}]: Received null/undefined, returning 0`);
+        return currency === "INR" ? "₹0" : "0.0000 ETH";
+      }
       if (typeof raw === "string")       eth = parseFloat(raw);
       else if (typeof raw === "number")  eth = raw;
       else eth = parseFloat(formatEther(raw)); // BigInt from contract
-      if (isNaN(eth)) return currency === "INR" ? "₹0" : "0.0000 ETH";
-      if (currency === "INR") return `₹${(eth * 500000).toLocaleString()}`;
-      return `${eth.toFixed(4)} ETH`;
+      if (isNaN(eth)) {
+        console.warn(`⚠️ Format [${label}]: NaN result from value: ${raw}`);
+        return currency === "INR" ? "₹0" : "0.0000 ETH";
+      }
+      const formatted = currency === "INR" ? `₹${(eth * 500000).toLocaleString()}` : `${eth.toFixed(4)} ETH`;
+      if (label) console.debug(`📊 Format [${label}]: ${eth.toFixed(6)} ETH → ${formatted}`);
+      return formatted;
     } catch (e) {
+      console.error(`❌ Format [${label}] error:`, e.message, "input:", raw);
       return currency === "INR" ? "₹0" : "0.0000 ETH";
     }
   }

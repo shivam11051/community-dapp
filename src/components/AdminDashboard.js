@@ -65,9 +65,22 @@ export default function AdminDashboard({
 
       // Get contract balance
       try {
-        const addr = typeof contract.target === "string" ? contract.target : await contract.getAddress();
-        const bal  = await contract.runner.provider.getBalance(addr);
-        setContractBal(formatEther(bal));
+        let addr;
+        try {
+          addr = contract.address || contract.target || (await contract.getAddress?.());
+          if (!addr) throw new Error("Could not determine contract address");
+        } catch (err) {
+          logger.warn("Failed to get contract address:", err.message);
+          addNotif("Could not load contract address", "warning");
+          return;
+        }
+
+        const bal = await contract.runner?.provider?.getBalance(addr);
+        if (!bal) {
+          setContractBal("0");
+        } else {
+          setContractBal(formatEther(bal));
+        }
       } catch (e) { 
         console.warn("⚠️ Error loading contract balance:", e.message);
       }

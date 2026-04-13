@@ -7,6 +7,27 @@
  *  4. emergencyRequests — added missing `endTime` and `repayBy`
  *  5. Added admin(), getInvitedList(), isInvited(), emergencyVoted(), kickVoted()
  *  6. Removed non-existent owner() and getMyPrivateInvites()
+ * 
+ * ERROR CODES REFERENCE:
+ * ──────────────────────────────────────────────────────────────
+ * ERR_INVALID_GROUP          "Group does not exist or is inactive"
+ * ERR_NOT_ADMIN              "Only admin can perform this action"
+ * ERR_NOT_MEMBER             "User is not a member of this group"
+ * ERR_ALREADY_MEMBER         "User is already a member of this group"
+ * ERR_GROUP_NOT_OPEN         "Group is not accepting new members"
+ * ERR_INSUFFICIENT_FUNDS     "Caller has insufficient ETH balance"
+ * ERR_PAUSED                 "Contract is paused, operations disabled"
+ * ERR_KICK_ACTIVE            "An active kick is pending for this member"
+ * ERR_NOT_YET_OVERDUE        "EMI is not yet overdue (missedEMIs < 2)"
+ * ERR_NONCE_EXPIRED          "Transaction nonce expired (try again)"
+ * ERR_NO_PERMISSION          "Caller lacks required permissions"
+ * ERR_VOTE_ALREADY_CAST      "User has already voted on this proposal"
+ * ERR_VOTING_NOT_OPEN        "Voting period has ended or not started"
+ * ERR_EMERGENCY_NOT_FOUND    "Emergency request doesn't exist"
+ * ERR_CANNOT_SELF_KICK       "Cannot raise a kick against yourself"
+ * 
+ * Note: Check the CommunityFinance.sol contract for exact error string definitions
+ * and transaction revert messages for debugging failed transactions.
  */
 
 export const ADDRESS = "0x44080CF1517a079F31C8333241Ee12f377A1cb9d";

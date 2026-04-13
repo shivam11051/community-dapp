@@ -9,7 +9,7 @@
  *  6. Fixed kickVoted check using the kickVoted mapping (was missing from old ABI)
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ConfirmModal from "./ConfirmModal";
 
 const MISS_LIMIT = 2; // matches contract constant
@@ -23,13 +23,16 @@ export default function KickScreen({
   const [group,        setGroup]        = useState(null);
   const [members,      setMembers]      = useState([]);
   const [kicks,        setKicks]        = useState([]);
-  const [memberInfos,  setMemberInfos]  = useState({}); // addr => { creditScore, missedEMIs, ... }
-  const [hasVotedMap,  setHasVotedMap]  = useState({}); // kickId => bool
+  const [memberInfos,  setMemberInfos]  = useState({});
+  const [hasVotedMap,  setHasVotedMap]  = useState({});
   const [loading,      setLoading]      = useState(true);
   const [showForm,     setShowForm]     = useState(false);
   const [target,       setTarget]       = useState("");
   const [activeKicks,  setActiveKicks]  = useState({});
-  const [confirmData,  setConfirmData]  = useState(null); // ConfirmModal state
+  const [confirmData,  setConfirmData]  = useState(null);
+  
+  // Prevent double-submit during confirmation
+  const submittingRef = useRef(false);
 
   useEffect(() => { if (contract && gid) load(); }, [contract, gid]);
 
@@ -116,14 +119,51 @@ export default function KickScreen({
 
   // ── Actions ───────────────────────────────────────────────────
 
+  const canRaiseKick = (memberAddr) => {
+    if (!memberAddr) return false;
+    const alreadyHasKick = activeKicks[memberAddr.toLowerCase()];
+    const memberData = memberInfos[memberAddr.toLowerCase()];
+    const hasEnoughMissed = memberData?.missedEMIs >= MISS_LIMIT;
+    return !alreadyHasKick && hasEnoughMissed;
+  };
+
   async function handleRaiseKick() {
-    if (!target) return addNotif("Select a member", "error");
-    if (target.toLowerCase() === account.toLowerCase())
-      return addNotif("Cannot raise a kick against yourself", "error");
-    await actions.raiseKick(gid, target);
-    setShowForm(false);
-    setTarget("");
-    await load();
+    // ✅ Prevent double-submit
+    if (submittingRef.current) {
+      console.warn("⚠️ Submission already in progress");
+      return;
+    }
+
+    // ✅ Validate target
+    if (!target) {
+      addNotif("Select a member", "error");
+      return;
+    }
+
+    if (target.toLowerCase() === account.toLowerCase()) {
+      addNotif("Cannot raise a kick against yourself", "error");
+      return;
+    }
+
+    // ✅ RE-CHECK eligibility (prevents race condition with concurrent kicks)
+    if (!canRaiseKick(target)) {
+      addNotif("Cannot raise kick for this member (already has active kick or insufficient missed EMIs)", "error");
+      return;
+    }
+
+    submittingRef.current = true;
+
+    try {
+      await actions.raiseKick(gid, target);
+      setShowForm(false);
+      setTarget("");
+      await load();
+    } catch (err) {
+      console.error("❌ Raise kick error:", err);
+      addNotif("Failed to raise kick: " + err.message, "error");
+    } finally {
+      submittingRef.current = false;
+    }
   }
 
   async function handleVoteKick(kid, support) {
@@ -259,6 +299,7 @@ export default function KickScreen({
               style={{ background: "var(--red)", color: "#fff", border: "none" }}
               onClick={() => {
                 if (!target) return addNotif("Select a member", "error");
+                if (!canRaiseKick(target)) return addNotif("Cannot raise kick for this member", "error");
                 setConfirmData({
                   title:        "Raise kick request?",
                   body:         `You are about to initiate a vote to remove ${target.slice(0, 10)}... from the group. Members will have ${5} minutes to vote. If majority agrees, the member is removed and their contribution redistributed.`,
@@ -269,11 +310,12 @@ export default function KickScreen({
               }}
               disabled={
                 txPending ||
+                submittingRef.current ||
                 !target ||
                 (memberInfos[target.toLowerCase()]?.missedEMIs || 0) < MISS_LIMIT
               }
             >
-              {txPending ? "Submitting..." : "Submit Kick Request"}
+              {txPending || submittingRef.current ? "Submitting..." : "Submit Kick Request"}
             </button>
             <button className="btn-secondary" onClick={() => { setShowForm(false); setTarget(""); }}>
               Cancel

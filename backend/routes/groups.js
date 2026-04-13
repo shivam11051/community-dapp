@@ -11,6 +11,14 @@ router.get("/", async (req, res) => {
   try {
     const { status, sort = "-createdAt", limit = 50, skip = 0 } = req.query;
 
+    // Validate pagination parameters
+    const validatedLimit = Math.min(Math.max(Number(limit) || 50, 1), 100); // 1-100
+    const validatedSkip  = Math.max(Number(skip) || 0, 0); // >= 0
+
+    // Validate sort field to prevent injection
+    const validFields = ["createdAt", "name", "status", "-createdAt", "-status", "-name"];
+    const validatedSort = validFields.includes(sort) ? sort : "-createdAt";
+
     let query = Group.find();
 
     if (status !== undefined) {
@@ -19,9 +27,9 @@ router.get("/", async (req, res) => {
 
     const total = await Group.countDocuments(query.getFilter());
     const groups = await query
-      .sort(sort)
-      .limit(Number(limit))
-      .skip(Number(skip))
+      .sort(validatedSort)
+      .limit(validatedLimit)
+      .skip(validatedSkip)
       .lean();
 
     res.json({

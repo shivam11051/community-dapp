@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatEther } from "ethers";
 
 const STATUS = ["PENDING", "OPEN", "ACTIVE", "CLOSED"];
@@ -19,41 +19,47 @@ export default function GroupDiscovery({
   const [loadingInvites, setLoadingInvites] = useState(false);
   const [invitesError,   setInvitesError]   = useState(null);
 
+  // Track in-flight requests to prevent race conditions
+  const loadingRef = useRef(false);
+  const invitesLoadingRef = useRef(false);
+
   // ─── LOAD GROUPS WHEN CONTRACT IS READY ──────────────────────
   useEffect(() => {
-    if (contract) {
+    if (contract && !loadingRef.current) {
       console.log("✅ Contract ready, loading groups...");
       loadGroups();
-    } else {
+    } else if (!contract) {
       console.warn("⏳ Waiting for contract...");
     }
-  }, [contract, openGroups]);
+  }, [contract]); // Only contract, NOT openGroups (prevents race condition)
 
   // ─── LOAD INVITES WHEN CONTRACT AND ACCOUNT ARE READY ────────
   useEffect(() => {
-    if (contract && account) {
+    if (contract && account && !invitesLoadingRef.current) {
       console.log("✅ Contract and account ready, loading invites...");
       loadMyInvites();
-    } else {
+    } else if (!contract || !account) {
       console.warn("⏳ Waiting for contract and account...");
     }
-  }, [contract, account]); // ← Add dependencies
+  }, [contract, account]); // Only dependencies ready for invites
 
   // ─── RELOAD INVITES WHEN TAB CHANGES ────────────────────────
   useEffect(() => {
-    if (activeTab === "invites" && contract && account) {
+    if (activeTab === "invites" && contract && account && !invitesLoadingRef.current) {
       loadMyInvites();
     }
-  }, [activeTab]);
+  }, [activeTab, contract, account]);
 
   // ─── LOAD ALL GROUPS ────────────────────────────────────────
   async function loadGroups() {
-    if (!contract) {
-      console.warn("⚠️ Contract not available");
+    if (!contract || loadingRef.current) {
+      if (!contract) console.warn("⚠️ Contract not available");
+      if (loadingRef.current) console.warn("⚠️ Load already in progress");
       setLoading(false);
       return;
     }
 
+    loadingRef.current = true;
     setLoading(true);
     try {
       const count = Number(await contract.groupCount());
@@ -70,7 +76,7 @@ export default function GroupDiscovery({
           try {
             const g       = await contract.groups(i);
             const members = await contract.getMembers(i);
-            const isPrivate = g.isPrivate !== undefined ? g.isPrivate : false;
+            const isPrivate = g.isPrivate ?? false;
             
             all.push({
               id:           Number(g.id),
@@ -88,7 +94,6 @@ export default function GroupDiscovery({
             });
           } catch (e) {
             console.warn(`⚠️ Could not load group ${i}:`, e.message);
-            /* skip broken entries */
           }
         }
       }
@@ -101,26 +106,31 @@ export default function GroupDiscovery({
       setGroups([]);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   }
 
   // ─── LOAD MY PRIVATE INVITES ─────────────────────────────────
   async function loadMyInvites() {
-    // ✅ Safety checks
+    // ✅ Prevent concurrent loads and safety checks
+    if (invitesLoadingRef.current) {
+      console.warn("⚠️ Invite load already in progress");
+      return;
+    }
+
     if (!contract) {
       console.warn("⚠️ Contract is null");
       setInvitesError("Contract not initialized");
-      setLoadingInvites(false);
       return;
     }
 
     if (!account) {
       console.warn("⚠️ Account is null");
       setInvitesError("Account not connected");
-      setLoadingInvites(false);
       return;
     }
 
+    invitesLoadingRef.current = true;
     setLoadingInvites(true);
     setInvitesError(null);
 
@@ -136,16 +146,14 @@ export default function GroupDiscovery({
         console.log("✅ getMyInvites result:", inviteIds);
       } catch (e) {
         console.warn("⚠️ getMyInvites failed:", e.message);
-        // Continue anyway, try manual scan below
       }
 
       // ✅ Method 2: Scan ALL groups manually to catch PENDING invites
-      // (admin hasn't approved yet but user was invited)
       try {
         const count = Number(await contract.groupCount());
         
         for (let i = 1; i <= count; i++) {
-          if (inviteIds.includes(i)) continue; // already found
+          if (inviteIds.includes(i)) continue;
           
           try {
             const isInv = await contract.isInvited(i, account);
@@ -185,11 +193,10 @@ export default function GroupDiscovery({
             memberCount:  members.length,
             totalPool:    g.totalPool,
             isPrivate:    true,
-            isPending:    status === 0, // waiting for admin approval
+            isPending:    status === 0,
           });
         } catch (e) {
           console.warn(`⚠️ Could not load invite group ${gid}:`, e.message);
-          /* skip broken entries */
         }
       }
       
@@ -202,6 +209,7 @@ export default function GroupDiscovery({
       setMyInvites([]);
     } finally {
       setLoadingInvites(false);
+      invitesLoadingRef.current = false;
     }
   }
 

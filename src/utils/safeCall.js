@@ -119,8 +119,8 @@ export async function safeCall(fn, options = {}) {
           return fallback;
         }
   
-        // Wait before retrying (exponential backoff: 1s, 2s, 3s...)
-        const waitTime = 1000 * attempt;
+        // Aggressive backoff for better UX: 200ms, 500ms, 1s
+        const waitTime = attempt === 1 ? 200 : attempt === 2 ? 500 : 1000;
         console.log(`⏸️  Retrying in ${waitTime}ms...`);
         await new Promise(r => setTimeout(r, waitTime));
       }

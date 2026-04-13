@@ -74,11 +74,24 @@ export default function EmergencyScreen({
     await load();
   }
 
-  async function handleRepay(rid, amount) {
-    const interest = parseFloat(formatEther(amount)) * 0.03;
-    const total    = (parseFloat(formatEther(amount)) + interest).toFixed(6);
-    await actions.repayEmergency(gid, rid, total);
-    await load();
+  async function handleRepay(rid) {
+    const request = requests.find(r => r.id === rid);
+    if (!request) {
+      addNotif("Emergency request not found", "error");
+      return;
+    }
+    
+    const principalInEth = parseFloat(formatEther(request.amount));
+    const interestRate = 0.03; // 3% per EMERGENCY_EXTRA constant
+    const interest = principalInEth * interestRate;
+    const totalDue = (principalInEth + interest).toFixed(6);
+    
+    try {
+      await actions.repayEmergency(gid, rid, totalDue);
+      await load();
+    } catch (err) {
+      addNotif(`Repayment failed: ${err.message}`, "error");
+    }
   }
 
   function timeLeft(endTime) {
@@ -245,7 +258,7 @@ export default function EmergencyScreen({
                 <button
                   className="btn-gold"
                   style={{ width: "100%", marginTop: 8 }}
-                  onClick={() => handleRepay(r.id, r.amount)}
+                  onClick={() => handleRepay(r.id)}
                   disabled={txPending}
                 >
                   Repay {(parseFloat(fmt(r.amount)) * 1.03).toFixed(6)} ETH (+3% interest)

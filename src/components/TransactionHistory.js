@@ -1,22 +1,23 @@
 import { useState, useEffect } from "react";
 import { formatEther } from "ethers";
 
+// Event configuration with proper field mapping
 const EVENT_CONFIG = {
-  GroupCreated:       { label: "Group Created",      color: "var(--cyan)",   icon: "🏦", amountField: null      },
-  GroupApproved:      { label: "Group Approved",     color: "var(--green)",  icon: "✅", amountField: null      },
-  MemberJoined:       { label: "Member Joined",      color: "var(--cyan)",   icon: "👤", amountField: null      },
-  VotingStarted:      { label: "Voting Started",     color: "var(--purple)", icon: "🗳️", amountField: null      },
-  BorrowerSelected:   { label: "Borrower Selected",  color: "var(--gold)",   icon: "🏆", amountField: null      },
-  LoanReleased:       { label: "Loan Released",      color: "var(--green)",  icon: "💸", amountField: "amount", dir: "in"  },
-  EMIPaid:            { label: "EMI Paid",           color: "var(--amber)",  icon: "📋", amountField: "amount", dir: "out" },
-  ProfitWithdrawn:    { label: "Profit Withdrawn",   color: "var(--green)",  icon: "💰", amountField: "amount", dir: "in"  },
-  EmergencyRequested: { label: "Emergency Raised",   color: "var(--red)",    icon: "🚨", amountField: "amount"  },
-  EmergencyResolved:  { label: "Emergency Resolved", color: "var(--amber)",  icon: "⚖️", amountField: null      },
-  EmergencyReleased:  { label: "Emergency Funds",    color: "var(--green)",  icon: "🆘", amountField: "amount", dir: "in"  },
-  EmergencyRepaid:    { label: "Emergency Repaid",   color: "var(--cyan)",   icon: "↩️", amountField: "amount", dir: "out" },
-  KickRaised:         { label: "Kick Raised",        color: "var(--red)",    icon: "⚠️", amountField: null      },
-  KickResolved:       { label: "Kick Resolved",      color: "var(--amber)",  icon: "⚖️", amountField: null      },
-  CreditUpdated:      { label: "Credit Updated",     color: "var(--purple)", icon: "⭐", amountField: null      },
+  GroupCreated:       { label: "Group Created",      color: "var(--cyan)",   icon: "🏦", amountField: null,     amountIdx: null },
+  GroupApproved:      { label: "Group Approved",     color: "var(--green)",  icon: "✅", amountField: null,     amountIdx: null },
+  MemberJoined:       { label: "Member Joined",      color: "var(--cyan)",   icon: "👤", amountField: null,     amountIdx: null },
+  VotingStarted:      { label: "Voting Started",     color: "var(--purple)", icon: "🗳️", amountField: null,     amountIdx: null },
+  BorrowerSelected:   { label: "Borrower Selected",  color: "var(--gold)",   icon: "🏆", amountField: null,     amountIdx: null },
+  LoanReleased:       { label: "Loan Released",      color: "var(--green)",  icon: "💸", amountField: "amount", amountIdx: 2, dir: "in"  },
+  EMIPaid:            { label: "EMI Paid",           color: "var(--amber)",  icon: "📋", amountField: "amount", amountIdx: 2, dir: "out" },
+  ProfitWithdrawn:    { label: "Profit Withdrawn",   color: "var(--green)",  icon: "💰", amountField: "amount", amountIdx: 2, dir: "in"  },
+  EmergencyRequested: { label: "Emergency Raised",   color: "var(--red)",    icon: "🚨", amountField: "amount", amountIdx: 5 },
+  EmergencyResolved:  { label: "Emergency Resolved", color: "var(--amber)",  icon: "⚖️", amountField: null,     amountIdx: null },
+  EmergencyReleased:  { label: "Emergency Funds",    color: "var(--green)",  icon: "🆘", amountField: "amount", amountIdx: 3, dir: "in"  },
+  EmergencyRepaid:    { label: "Emergency Repaid",   color: "var(--cyan)",   icon: "↩️", amountField: "amount", amountIdx: 3, dir: "out" },
+  KickRaised:         { label: "Kick Raised",        color: "var(--red)",    icon: "⚠️", amountField: null,     amountIdx: null },
+  KickResolved:       { label: "Kick Resolved",      color: "var(--amber)",  icon: "⚖️", amountField: null,     amountIdx: null },
+  CreditUpdated:      { label: "Credit Updated",     color: "var(--purple)", icon: "⭐", amountField: null,     amountIdx: null },
 };
 
 export default function TransactionHistory({
@@ -31,6 +32,26 @@ export default function TransactionHistory({
   const [filter,   setFilter]   = useState("all");
   const [addrFilter, setAddrFilter] = useState("");
 
+  // ── Configurable filters: stored in localStorage ───────────────────
+  const DEFAULT_FILTERS = {
+    loan:      ["LoanReleased", "BorrowerSelected"],
+    emi:       ["EMIPaid"],
+    profit:    ["ProfitWithdrawn"],
+    voting:    ["VotingStarted", "BorrowerSelected"],
+    emergency: ["EmergencyRequested", "EmergencyResolved", "EmergencyReleased", "EmergencyRepaid"],
+    members:   ["MemberJoined", "GroupCreated", "GroupApproved", "KickRaised", "KickResolved"],
+    credit:    ["CreditUpdated"],
+  };
+
+  const [filterMap, setFilterMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem("tx_filter_preferences");
+      return saved ? JSON.parse(saved) : DEFAULT_FILTERS;
+    } catch {
+      return DEFAULT_FILTERS;
+    }
+  });
+
   useEffect(() => { if (contract && gid) load(); }, [contract, gid]);
   useEffect(() => { applyFilter(); }, [txs, filter, addrFilter]);
 
@@ -44,16 +65,28 @@ export default function TransactionHistory({
         try {
           const events = await contract.queryFilter(name);
           for (const e of events) {
+            if (!e.args || !Array.isArray(e.args)) continue;
+            
             const args = e.args;
+            const groupId = args[0];
+            
             // Only include events for this group
-            if (args[0] !== undefined && Number(args[0]) !== gid) continue;
+            if (groupId === undefined) continue;
+            if (Number(groupId) !== gid) continue;
 
             const cfg = EVENT_CONFIG[name];
             let amount = null;
-            if (cfg.amountField === "amount") {
-              // Find amount in args — different position per event
-              const amtArg = Array.from(args).find(a => typeof a === "bigint" && a > 0n);
-              if (amtArg) amount = formatEther(amtArg);
+            
+            // Extract amount using the proper index (not naive scanning)
+            if (cfg.amountField === "amount" && cfg.amountIdx !== null && args[cfg.amountIdx]) {
+              try {
+                const amtVal = args[cfg.amountIdx];
+                // Handle both string bigints and actual bigints
+                const bigintVal = typeof amtVal === "bigint" ? amtVal : BigInt(amtVal);
+                amount = formatEther(bigintVal);
+              } catch (amtErr) {
+                console.warn(`Failed to extract amount for ${name}:`, amtErr);
+              }
             }
 
             all.push({
@@ -63,16 +96,23 @@ export default function TransactionHistory({
               icon:    cfg.icon,
               dir:     cfg.dir || null,
               amount,
-              args:    [...args].map(a => a?.toString?.() ?? ""),
+              args:    [...args].map(a => {
+                try {
+                  return a?.toString?.() ?? String(a);
+                } catch {
+                  return String(a);
+                }
+              }),
               block:   e.blockNumber,
               txHash:  e.transactionHash,
               logIdx:  e.logIndex,
             });
           }
-        } catch { /* some events may not exist */ }
+        } catch (err) {
+          console.warn(`TransactionHistory: Failed to query ${name}:`, err.message);
+        }
       }
 
-      // Sort newest first
       all.sort((a, b) => b.block - a.block || b.logIdx - a.logIdx);
       setTxs(all);
     } catch (err) {
@@ -86,16 +126,8 @@ export default function TransactionHistory({
     let result = [...txs];
 
     if (filter !== "all") {
-      const filterMap = {
-        loan:      ["LoanReleased", "BorrowerSelected"],
-        emi:       ["EMIPaid"],
-        profit:    ["ProfitWithdrawn"],
-        voting:    ["VotingStarted", "BorrowerSelected"],
-        emergency: ["EmergencyRequested", "EmergencyResolved", "EmergencyReleased", "EmergencyRepaid"],
-        members:   ["MemberJoined", "GroupCreated", "GroupApproved", "KickRaised", "KickResolved"],
-        credit:    ["CreditUpdated"],
-      };
-      result = result.filter(t => (filterMap[filter] || []).includes(t.type));
+      const selectedEvents = filterMap[filter] || [];
+      result = result.filter(t => selectedEvents.includes(t.type));
     }
 
     if (addrFilter.trim()) {
@@ -109,6 +141,35 @@ export default function TransactionHistory({
     setFiltered(result);
   }
 
+  // Save filter preferences to localStorage
+  function saveFilterPreferences(newFilterMap) {
+    try {
+      localStorage.setItem("tx_filter_preferences", JSON.stringify(newFilterMap));
+      setFilterMap(newFilterMap);
+    } catch (e) {
+      console.warn("Failed to save filter preferences:", e);
+    }
+  }
+
+  // Reset to default filters
+  function resetFilters() {
+    saveFilterPreferences(DEFAULT_FILTERS);
+  }
+
+  // Toggle an event type in a filter category
+  function toggleEventInFilter(filterName, eventType) {
+    const updated = { ...filterMap };
+    const events = updated[filterName] || [];
+    const idx = events.indexOf(eventType);
+    if (idx >= 0) {
+      events.splice(idx, 1);
+    } else {
+      events.push(eventType);
+    }
+    updated[filterName] = events;
+    saveFilterPreferences(updated);
+  }
+
   function fmt(amount) {
     if (!amount) return "";
     const n = parseFloat(amount);
@@ -117,19 +178,42 @@ export default function TransactionHistory({
 
   function getSubtitle(tx) {
     const a = tx.args;
-    switch (tx.type) {
-      case "MemberJoined":       return `Member ${a[1]?.slice(0,8)}...${a[1]?.slice(-4)} joined`;
-      case "BorrowerSelected":   return `Borrower: ${a[1]?.slice(0,8)}...${a[1]?.slice(-4)}${a[2]==="true"?" (tie broken)":""}`;
-      case "LoanReleased":       return `To: ${a[1]?.slice(0,8)}...${a[1]?.slice(-4)}`;
-      case "EMIPaid":            return `Month #${a[3]} · Late fee: ${parseFloat(formatEther(a[4]||"0"))>0?fmt(formatEther(a[4])):"None"}`;
-      case "ProfitWithdrawn":    return `By: ${a[1]?.slice(0,8)}...${a[1]?.slice(-4)}`;
-      case "EmergencyRequested": return `"${a[4]}" by ${a[2]?.slice(0,8)}...`;
-      case "EmergencyResolved":  return `${a[2]==="true"?"Approved":"Rejected"} — Yes:${a[3]} No:${a[4]}`;
-      case "EmergencyReleased":  return `To: ${a[2]?.slice(0,8)}...${a[2]?.slice(-4)}`;
-      case "KickRaised":         return `Target: ${a[2]?.slice(0,8)}... by ${a[3]?.slice(0,8)}...`;
-      case "KickResolved":       return `${a[3]==="true"?"Kicked":"Kept"}: ${a[2]?.slice(0,8)}...`;
-      case "CreditUpdated":      return `${a[1]?.slice(0,8)}... new score: ${a[2]}`;
-      default:                   return "";
+    if (!a) return "";
+
+    const safeAddr = (addr, idx = 0) => addr ? `${addr.slice(0, 8)}...${addr.slice(-4)}` : `arg[${idx}]`;
+    const safeBool = (val) => val === "true" || val === true;
+    const safeNum = (val, def = "0") => val ? String(val) : def;
+
+    try {
+      switch (tx.type) {
+        case "MemberJoined":       
+          return `Member ${a[1] ? safeAddr(a[1], 1) : "unknown"} joined`;
+        case "BorrowerSelected":   
+          return `Borrower: ${a[1] ? safeAddr(a[1], 1) : "unknown"}${safeBool(a[2]) ? " (tie broken)" : ""}`;
+        case "LoanReleased":       
+          return `To: ${a[1] ? safeAddr(a[1], 1) : "unknown"}`;
+        case "EMIPaid":            
+          return `Month #${safeNum(a[3], "?")} · Late fee: ${a[4] && formatEther(a[4]) ? fmt(formatEther(a[4])) : "None"}`;
+        case "ProfitWithdrawn":    
+          return `By: ${a[1] ? safeAddr(a[1], 1) : "unknown"}`;
+        case "EmergencyRequested": 
+          return `"${a[4] || "?"}" by ${a[2] ? safeAddr(a[2], 2) : "unknown"}`;
+        case "EmergencyResolved":  
+          return `${safeBool(a[2]) ? "Approved" : "Rejected"} — Yes:${safeNum(a[3])} No:${safeNum(a[4])}`;
+        case "EmergencyReleased":  
+          return `To: ${a[2] ? safeAddr(a[2], 2) : "unknown"}`;
+        case "KickRaised":         
+          return `Target: ${a[2] ? safeAddr(a[2], 2) : "unknown"} by ${a[3] ? safeAddr(a[3], 3) : "unknown"}`;
+        case "KickResolved":       
+          return `${safeBool(a[3]) ? "Kicked" : "Kept"}: ${a[2] ? safeAddr(a[2], 2) : "unknown"}`;
+        case "CreditUpdated":      
+          return `${a[1] ? safeAddr(a[1], 1) : "unknown"} new score: ${safeNum(a[2])}`;
+        default:                   
+          return "";
+      }
+    } catch (err) {
+      console.warn("getSubtitle error:", err);
+      return "";
     }
   }
 
@@ -182,7 +266,7 @@ export default function TransactionHistory({
       </div>
 
       {/* ── Filters ────────────────────────────────────────────── */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12, alignItems: "center" }}>
         {FILTERS.map(f => (
           <button
             key={f.key}
@@ -193,6 +277,26 @@ export default function TransactionHistory({
             {f.label}
           </button>
         ))}
+        
+        {/* Reset filters button (shows when not default) */}
+        {JSON.stringify(filterMap) !== JSON.stringify(DEFAULT_FILTERS) && (
+          <button
+            onClick={resetFilters}
+            style={{
+              marginLeft: "auto",
+              padding: "4px 10px",
+              fontSize: 11,
+              background: "var(--amber)",
+              color: "var(--text)",
+              border: "none",
+              borderRadius: "var(--radius-sm)",
+              cursor: "pointer",
+            }}
+            title="Reset filters to default"
+          >
+            🔄 Reset Filters
+          </button>
+        )}
       </div>
 
       {/* ── Address search ─────────────────────────────────────── */}

@@ -101,14 +101,13 @@ export function AppContextProvider({ children }) {
 
       if (!adminResolved) {
         try {
-          // FIX: use contract.admin() — the contract has `address public admin`,
-          // NOT an owner() function. Previous code called owner() which reverts.
           const onChainAdmin = await c.admin();
           const userIsAdmin  = onChainAdmin.toLowerCase() === userAccount.toLowerCase();
           setIsAdmin(userIsAdmin);
           if (userIsAdmin) addNotif("Admin mode enabled (on-chain).", "success");
         } catch (e) {
-          console.warn("Could not fetch admin address from contract:", e.message);
+          console.error("Could not fetch admin status from contract:", e.message);
+          addNotif("⚠️ Could not verify admin status. Defaulting to user mode.", "warning");
           setIsAdmin(false);
         }
       }

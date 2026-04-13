@@ -70,7 +70,7 @@ export default function AdminDashboard({
           addr = contract.address || contract.target || (await contract.getAddress?.());
           if (!addr) throw new Error("Could not determine contract address");
         } catch (err) {
-          logger.warn("Failed to get contract address:", err.message);
+          console.warn("⚠️ Failed to get contract address:", err.message);
           addNotif("Could not load contract address", "warning");
           return;
         }

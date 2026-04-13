@@ -190,9 +190,15 @@ export async function safeCall(fn, options = {}) {
         console.error(`❌ ${label} failed to send`);
         return null;
       }
+
+      // Validate transaction object has wait method
+      if (!tx || typeof tx.wait !== "function") {
+        console.error(`❌ ${label}: Invalid transaction object. Missing wait() method.`, tx);
+        return null;
+      }
   
       // Log transaction hash
-      console.log(`📋 TX Hash: ${tx.hash}`);
+      console.log(`📋 TX Hash: ${tx.hash || "undefined"}`);
   
       // Wait for confirmations
       console.log(`⏳ Waiting ${confirmations} confirmation(s)...`);

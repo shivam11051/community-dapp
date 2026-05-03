@@ -57,6 +57,7 @@ function AppContent() {
   // ── Navigation
   const [screen, setScreen] = useState("discovery");
   const [activeGroupId, setActiveGroupId] = useState(null);
+  const [showLanding, setShowLanding] = useState(true); // Show landing until user clicks "Connect Wallet"
 
   // ── Currency toggle
   const [currency, setCurrency] = useState("INR");
@@ -159,16 +160,8 @@ function AppContent() {
 
       setGroupCache(cache);
 
-      // Auto-navigate to dashboard if user is in an active group
-      if (myGid > 0) {
-        const myGroup = cache[myGid];
-        const status = myGroup ? myGroup.status : -1;
-        setActiveGroupId(myGid);
-        if (status > 0) {
-          setScreen("dashboard");
-        }
-      }
-
+      console.log(`✅ Global state loaded: myGroupId=${myGid}`);
+      
     } catch (err) {
       console.error("❌ Error loading global state:", err);
     }
@@ -870,7 +863,10 @@ function AppContent() {
               {contextLoading ? "Connecting..." : "Connect Wallet"}
             </button>
           ) : (
-            <div className="wallet-chip" title="Click to disconnect" style={{ cursor: "pointer" }} onClick={disconnect}>
+            <div className="wallet-chip" title="Click to disconnect" style={{ cursor: "pointer" }} onClick={() => {
+              disconnect();
+              setShowLanding(true); // Show landing page after disconnect
+            }}>
               <div className="dot dot-green" />
               {account.slice(0, 6)}...{account.slice(-4)}
               <span style={{ marginLeft: 6, fontSize: 10, opacity: 0.6 }}>✕</span>
@@ -906,11 +902,14 @@ function AppContent() {
 
       {/* ── MAIN CONTENT ───────────────────────────────────────── */}
       <div className="main">
-        {!account ? (
+        {showLanding && !account ? (
           /* ── LANDING ─────────────────────────────────────────── */
           <LandingPage
             contextLoading={contextLoading}
-            initializeWeb3={initializeWeb3}
+            initializeWeb3={() => {
+              initializeWeb3();
+              setShowLanding(false); // Hide landing once wallet connects
+            }}
             CONTRACT_ADDRESS={CONTRACT_ADDRESS}
           />
         ) : (

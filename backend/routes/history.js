@@ -109,4 +109,42 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────
+// GET Etherscan logs (CORS proxy)
+// ─────────────────────────────────────────────
+router.get("/etherscan/logs/:address", async (req, res) => {
+  try {
+    const { address } = req.params;
+    
+    // Validate address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      return res.status(400).json({ error: "Invalid contract address" });
+    }
+
+    const apiKey = process.env.ETHERSCAN_API_KEY || "";
+    
+    // Build the API URL without "latest" - use specific blocks instead
+    // Get current block first, then query with actual block numbers
+    let apiUrl = `https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=${address}&fromBlock=0&toBlock=99999999`;
+    if (apiKey) {
+      apiUrl += `&apikey=${apiKey}`;
+    }
+    
+    console.log(`📡 [BACKEND] Calling Etherscan: ${apiUrl}`);
+    logger.info(`📡 Calling Etherscan: ${apiUrl}`);
+    
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    console.log(`📊 [BACKEND] Etherscan response:`, JSON.stringify(data).substring(0, 300));
+    logger.info(`📊 Etherscan response: ${JSON.stringify(data).substring(0, 200)}`);
+
+    res.json(data);
+  } catch (error) {
+    console.error(`❌ [BACKEND] Error:`, error.message);
+    logger.error(`Error fetching Etherscan logs: ${error.message}`);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

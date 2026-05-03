@@ -3,21 +3,22 @@ import { formatEther } from "ethers";
 
 // Event configuration with proper field mapping
 const EVENT_CONFIG = {
-  GroupCreated:       { label: "Group Created",      color: "var(--cyan)",   icon: "🏦", amountField: null,     amountIdx: null },
-  GroupApproved:      { label: "Group Approved",     color: "var(--green)",  icon: "✅", amountField: null,     amountIdx: null },
-  MemberJoined:       { label: "Member Joined",      color: "var(--cyan)",   icon: "👤", amountField: null,     amountIdx: null },
-  VotingStarted:      { label: "Voting Started",     color: "var(--purple)", icon: "🗳️", amountField: null,     amountIdx: null },
-  BorrowerSelected:   { label: "Borrower Selected",  color: "var(--gold)",   icon: "🏆", amountField: null,     amountIdx: null },
-  LoanReleased:       { label: "Loan Released",      color: "var(--green)",  icon: "💸", amountField: "amount", amountIdx: 2, dir: "in"  },
-  EMIPaid:            { label: "EMI Paid",           color: "var(--amber)",  icon: "📋", amountField: "amount", amountIdx: 2, dir: "out" },
-  ProfitWithdrawn:    { label: "Profit Withdrawn",   color: "var(--green)",  icon: "💰", amountField: "amount", amountIdx: 2, dir: "in"  },
-  EmergencyRequested: { label: "Emergency Raised",   color: "var(--red)",    icon: "🚨", amountField: "amount", amountIdx: 5 },
-  EmergencyResolved:  { label: "Emergency Resolved", color: "var(--amber)",  icon: "⚖️", amountField: null,     amountIdx: null },
-  EmergencyReleased:  { label: "Emergency Funds",    color: "var(--green)",  icon: "🆘", amountField: "amount", amountIdx: 3, dir: "in"  },
-  EmergencyRepaid:    { label: "Emergency Repaid",   color: "var(--cyan)",   icon: "↩️", amountField: "amount", amountIdx: 3, dir: "out" },
-  KickRaised:         { label: "Kick Raised",        color: "var(--red)",    icon: "⚠️", amountField: null,     amountIdx: null },
-  KickResolved:       { label: "Kick Resolved",      color: "var(--amber)",  icon: "⚖️", amountField: null,     amountIdx: null },
-  CreditUpdated:      { label: "Credit Updated",     color: "var(--purple)", icon: "⭐", amountField: null,     amountIdx: null },
+  GroupCreated:       { label: "Group Created",      color: "var(--cyan)",   icon: "🏦", signature: "GroupCreated(uint256,string,address,uint256,bool)" },
+  GroupApproved:      { label: "Group Approved",     color: "var(--green)",  icon: "✅", signature: "GroupApproved(uint256)" },
+  MemberJoined:       { label: "Member Joined",      color: "var(--cyan)",   icon: "👤", signature: "MemberJoined(uint256,address,uint256)" },
+  VotingStarted:      { label: "Voting Started",     color: "var(--purple)", icon: "🗳️", signature: "VotingStarted(uint256,uint256)" },
+  BorrowerSelected:   { label: "Borrower Selected",  color: "var(--gold)",   icon: "🏆", signature: "BorrowerSelected(uint256,address,bool)" },
+  LoanReleased:       { label: "Loan Released",      color: "var(--green)",  icon: "💸", signature: "LoanReleased(uint256,address,uint256)" },
+  EMIPaid:            { label: "EMI Paid",           color: "var(--amber)",  icon: "📋", signature: "EMIPaid(uint256,address,uint256,uint256,uint256)" },
+  ProfitWithdrawn:    { label: "Profit Withdrawn",   color: "var(--green)",  icon: "💰", signature: "ProfitWithdrawn(uint256,address,uint256)" },
+  EmergencyRequested: { label: "Emergency Raised",   color: "var(--red)",    icon: "🚨", signature: "EmergencyRequested(uint256,uint256,uint256,address,string)" },
+  EmergencyResolved:  { label: "Emergency Resolved", color: "var(--amber)",  icon: "⚖️", signature: "EmergencyResolved(uint256,uint256,bool)" },
+  EmergencyReleased:  { label: "Emergency Funds",    color: "var(--green)",  icon: "🆘", signature: "EmergencyReleased(uint256,uint256,uint256)" },
+  EmergencyRepaid:    { label: "Emergency Repaid",   color: "var(--cyan)",   icon: "↩️", signature: "EmergencyRepaid(uint256,uint256,uint256)" },
+  KickRaised:         { label: "Kick Raised",        color: "var(--red)",    icon: "⚠️", signature: "KickRaised(uint256,uint256,address)" },
+  KickResolved:       { label: "Kick Resolved",      color: "var(--amber)",  icon: "⚖️", signature: "KickResolved(uint256,uint256,bool)" },
+  CreditUpdated:      { label: "Credit Updated",     color: "var(--purple)", icon: "⭐", signature: "CreditUpdated(uint256,address,uint256)" },
+  VoteCast:           { label: "Vote Cast",          color: "var(--purple)", icon: "🗳️", signature: "VoteCast(uint256,address,address)" },
 };
 
 export default function TransactionHistory({
@@ -58,62 +59,65 @@ export default function TransactionHistory({
   async function load() {
     setLoading(true);
     try {
+      if (!contract) {
+        console.warn("Contract not available");
+        return;
+      }
+
+      // Get contract address
+      const contractAddress = await contract.getAddress();
+      console.log(`📡 Fetching transactions from MongoDB for Group #${gid}`);
+
+      // Fetch all logs through backend database (avoids API limits)
+      const backendBase = process.env.REACT_APP_BACKEND_URL || "http://localhost:5001";
+      const backendUrl = `${backendBase}/api/history/${gid}?limit=1000`;
+      console.log(`Backend endpoint: ${backendUrl}`);
+      const response = await fetch(backendUrl);
+
+      if (!response.ok) {
+        console.error("Backend API error:", response.statusText);
+        return;
+      }
+
+      const result = await response.json();
+      console.log("📦 Full response:", result);
+      
+      if (!result.data || result.data.length === 0) {
+        console.warn("❌ No transactions found in database for this group");
+        setTxs([]);
+        return;
+      }
+
+      console.log(`📊 Found ${result.data.length} transactions from MongoDB`);
+
+      // Transform database events to UI format
       const all = [];
-
-      const eventNames = Object.keys(EVENT_CONFIG);
-      for (const name of eventNames) {
+      for (const event of result.data) {
         try {
-          const events = await contract.queryFilter(name);
-          for (const e of events) {
-            if (!e.args || !Array.isArray(e.args)) continue;
-            
-            const args = e.args;
-            const groupId = args[0];
-            
-            // Only include events for this group
-            if (groupId === undefined) continue;
-            if (Number(groupId) !== gid) continue;
+          // Map from database format to UI format
+          const eventConfig = EVENT_CONFIG[event.eventType];
+          if (!eventConfig) continue;
 
-            const cfg = EVENT_CONFIG[name];
-            let amount = null;
-            
-            // Extract amount using the proper index (not naive scanning)
-            if (cfg.amountField === "amount" && cfg.amountIdx !== null && args[cfg.amountIdx]) {
-              try {
-                const amtVal = args[cfg.amountIdx];
-                // Handle both string bigints and actual bigints
-                const bigintVal = typeof amtVal === "bigint" ? amtVal : BigInt(amtVal);
-                amount = formatEther(bigintVal);
-              } catch (amtErr) {
-                console.warn(`Failed to extract amount for ${name}:`, amtErr);
-              }
-            }
-
-            all.push({
-              type:    name,
-              label:   cfg.label,
-              color:   cfg.color,
-              icon:    cfg.icon,
-              dir:     cfg.dir || null,
-              amount,
-              args:    [...args].map(a => {
-                try {
-                  return a?.toString?.() ?? String(a);
-                } catch {
-                  return String(a);
-                }
-              }),
-              block:   e.blockNumber,
-              txHash:  e.transactionHash,
-              logIdx:  e.logIndex,
-            });
-          }
+          all.push({
+            type: event.eventType,
+            label: event.eventType,
+            color: eventConfig.color,
+            icon: eventConfig.icon,
+            dir: null,
+            amount: event.amount || null,
+            args: event.args || [gid.toString()],
+            block: event.block || 0,
+            txHash: event.txHash || "pending",
+            logIdx: event.logIndex || 0,
+            timestamp: event.timestamp,
+          });
         } catch (err) {
-          console.warn(`TransactionHistory: Failed to query ${name}:`, err.message);
+          console.warn("Failed to process event:", err.message);
         }
       }
 
-      all.sort((a, b) => b.block - a.block || b.logIdx - a.logIdx);
+      all.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      console.log(`✅ Loaded ${all.length} transactions for Group #${gid}`);
       setTxs(all);
     } catch (err) {
       console.error("TransactionHistory load:", err);

@@ -102,3 +102,160 @@
 [2026-03-21T10:30:12.861Z] ℹ️ INFO: ✅ Event listener started
 [2026-03-21T10:30:13.329Z] ℹ️ INFO: ✅ MongoDB connected
 [2026-03-21T10:30:42.194Z] ℹ️ INFO: 🛑 Shutting down gracefully...
+[2026-04-13T22:29:52.037Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-04-13T22:30:06.978Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-04-13T22:34:43.983Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-04-13T22:34:45.035Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-04-13T22:34:45.044Z] ℹ️ INFO: ✅ Event listener started
+[2026-04-13T22:34:45.055Z] ℹ️ INFO: ⏳ CRON: Initializing...
+[2026-04-13T22:34:45.055Z] ⚠️ WARNING: ⚠️  CRON: Missing config (ALCHEMY_KEY, CONTRACT_ADDRESS, CRON_SIGNER_PRIVATE_KEY)
+[2026-04-13T22:34:45.055Z] ℹ️ INFO: ✅ Cron service started
+[2026-04-13T22:34:45.062Z] ℹ️ INFO: ✅ Server running on port 5001
+[2026-04-13T22:35:44.408Z] ℹ️ INFO: Admin check for 0x567e0dc2c06334ca44e0dedc616f549413cb120a: false
+[2026-04-13T22:35:44.422Z] ℹ️ INFO: Admin check for 0x567e0dc2c06334ca44e0dedc616f549413cb120a: false
+[2026-04-13T22:36:04.399Z] ℹ️ INFO: Admin check for 0x567e0dc2c06334ca44e0dedc616f549413cb120a: false
+[2026-04-13T22:36:04.408Z] ℹ️ INFO: Admin check for 0x567e0dc2c06334ca44e0dedc616f549413cb120a: false
+[2026-04-13T22:36:34.167Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:36:34.172Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:36:53.081Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:36:53.088Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:38:16.453Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:38:16.463Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:38:26.610Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:38:26.612Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:39:54.882Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-04-13T22:39:55.747Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-04-13T22:39:55.760Z] ℹ️ INFO: ✅ Event listener started
+[2026-04-13T22:39:55.774Z] ℹ️ INFO: ⏳ CRON: Initializing...
+[2026-04-13T22:39:55.774Z] ⚠️ WARNING: ⚠️  CRON: Missing config (ALCHEMY_KEY, CONTRACT_ADDRESS, CRON_SIGNER_PRIVATE_KEY)
+[2026-04-13T22:39:55.774Z] ℹ️ INFO: ✅ Cron service started
+[2026-04-13T22:39:55.778Z] ℹ️ INFO: ✅ Server running on port 5001
+[2026-04-13T22:40:07.495Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:40:07.500Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:40:12.579Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:13.202Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:13.207Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:13.539Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:16.643Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:16.960Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:16.964Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:17.282Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:17.288Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:17.690Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:17.693Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:18.015Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:18.019Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:18.336Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:18.341Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:18.738Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:18.742Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:19.063Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:19.067Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:19.384Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:19.390Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:19.784Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:19.788Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:20.099Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:20.102Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:20.413Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:20.416Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:20.732Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:20.737Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:21.050Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 52
+[2026-04-13T22:40:21.056Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:21.369Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:21.375Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:21.705Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:21.707Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:22.098Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:22.101Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:22.623Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:22.625Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:22.976Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:40:53.299Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:40:53.733Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:34.374Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:41:34.388Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:41:37.734Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:38.124Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:38.126Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:38.478Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:40.046Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:40.395Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:40.988Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:41.299Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:41.302Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:41.789Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:41.793Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:42.107Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:42.110Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:42.488Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:42.491Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:42.838Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:42.841Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:43.154Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:41:52.220Z] ℹ️ INFO: 📡 Etherscan API call: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:41:52.800Z] ℹ️ INFO: 📊 Etherscan response status: 0, results: 24
+[2026-04-13T22:43:07.161Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-04-13T22:43:08.683Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-04-13T22:43:08.699Z] ℹ️ INFO: ✅ Event listener started
+[2026-04-13T22:43:08.712Z] ℹ️ INFO: ⏳ CRON: Initializing...
+[2026-04-13T22:43:08.712Z] ⚠️ WARNING: ⚠️  CRON: Missing config (ALCHEMY_KEY, CONTRACT_ADDRESS, CRON_SIGNER_PRIVATE_KEY)
+[2026-04-13T22:43:08.712Z] ℹ️ INFO: ✅ Cron service started
+[2026-04-13T22:43:08.715Z] ℹ️ INFO: ✅ Server running on port 5001
+[2026-04-13T22:43:34.903Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:43:34.907Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:43:38.340Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:43:38.769Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:43:38.785Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:43:39.096Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:43:40.027Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:43:40.343Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:43:41.391Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:43:41.704Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:43:58.493Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:43:58.980Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:46:26.032Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:46:26.041Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-04-13T22:46:30.712Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:46:31.713Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:46:31.715Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest
+[2026-04-13T22:46:32.065Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:49:09.682Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-04-13T22:49:10.691Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-04-13T22:49:10.705Z] ℹ️ INFO: ✅ Event listener started
+[2026-04-13T22:49:10.718Z] ℹ️ INFO: ⏳ CRON: Initializing...
+[2026-04-13T22:49:10.718Z] ⚠️ WARNING: ⚠️  CRON: Missing config (ALCHEMY_KEY, CONTRACT_ADDRESS, CRON_SIGNER_PRIVATE_KEY)
+[2026-04-13T22:49:10.718Z] ℹ️ INFO: ✅ Cron service started
+[2026-04-13T22:49:10.722Z] ℹ️ INFO: ✅ Server running on port 5001
+[2026-04-13T22:49:20.072Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:49:20.089Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:49:24.967Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest&apikey=ENPHXUCW4T2RZW63WSHY3AT4YD3YAT81AZ
+[2026-04-13T22:49:25.811Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:49:25.831Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest&apikey=ENPHXUCW4T2RZW63WSHY3AT4YD3YAT81AZ
+[2026-04-13T22:49:26.153Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:49:27.158Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest&apikey=ENPHXUCW4T2RZW63WSHY3AT4YD3YAT81AZ
+[2026-04-13T22:49:27.483Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:49:30.787Z] ℹ️ INFO: 📡 Calling Etherscan: https://sepolia.etherscan.io/api?module=logs&action=getLogs&address=0xD0f92aED207478cAB75387AFEb7D004DBb95D41F&fromBlock=0&toBlock=latest&apikey=ENPHXUCW4T2RZW63WSHY3AT4YD3YAT81AZ
+[2026-04-13T22:49:31.371Z] ℹ️ INFO: 📊 Etherscan response: {"status":"0","message":"NOTOK","result":"Invalid API URL endpoint"}
+[2026-04-13T22:52:47.239Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-04-13T22:52:48.174Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-04-13T22:52:48.181Z] ℹ️ INFO: ✅ Event listener started
+[2026-04-13T22:52:48.190Z] ℹ️ INFO: ⏳ CRON: Initializing...
+[2026-04-13T22:52:48.190Z] ⚠️ WARNING: ⚠️  CRON: Missing config (ALCHEMY_KEY, CONTRACT_ADDRESS, CRON_SIGNER_PRIVATE_KEY)
+[2026-04-13T22:52:48.191Z] ℹ️ INFO: ✅ Cron service started
+[2026-04-13T22:52:48.193Z] ℹ️ INFO: ✅ Server running on port 5001
+[2026-04-13T22:53:48.771Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:53:48.785Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:53:50.900Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-04-13T22:53:50.912Z] ℹ️ INFO: Admin check for 0x027b20c6af5d20d3ce13e9f4bbcd532846098d2d: false
+[2026-05-03T11:30:27.905Z] ℹ️ INFO: ✅ Loaded JSON ABI with 113 items from artifact
+[2026-05-03T11:30:29.649Z] ℹ️ INFO: ✅ MongoDB connected
+[2026-05-03T11:30:29.656Z] ℹ️ INFO: ✅ Event listener started
+[2026-05-03T11:30:29.666Z] ℹ️ INFO: ⏳ CRON: Initializing...
+[2026-05-03T11:30:29.666Z] ⚠️ WARNING: ⚠️  CRON: Missing config (ALCHEMY_KEY, CONTRACT_ADDRESS, CRON_SIGNER_PRIVATE_KEY)
+[2026-05-03T11:30:29.666Z] ℹ️ INFO: ✅ Cron service started
+[2026-05-03T11:30:29.669Z] ℹ️ INFO: ✅ Server running on port 5001
+[2026-05-03T11:30:46.217Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-05-03T11:30:46.224Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true
+[2026-05-03T11:30:50.782Z] ℹ️ INFO: Admin check for 0xfe6fdb2d1b213400272fa50f993d9c61bb885ac0: true

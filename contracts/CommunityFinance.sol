@@ -580,6 +580,8 @@ contract CommunityFinance is ReentrancyGuard, Pausable {
                 }
             }
 
+            require(maxVotes > 0, "E:40");  // Must have votes if totalCast > 0
+
             address[] memory tied = new address[](_candidates[gid].length);
             uint tieCount = 0;
             for (uint i = 0; i < _candidates[gid].length; i++) {
@@ -588,15 +590,21 @@ contract CommunityFinance is ReentrancyGuard, Pausable {
                 }
             }
 
+            require(tieCount > 0, "E:41");  // Must have at least one winner
+            
             if (tieCount == 1) {
                 winner = tied[0];
             } else {
                 wasTie = true;
+                require(tieCount <= 200, "E:42");  // Sanity check - shouldn't have 200+ candidates
                 uint rand = uint(keccak256(abi.encodePacked(
                     blockhash(block.number - 1),
+                    blockhash(block.number - 2),
                     block.timestamp,
+                    block.prevrandao,
                     g.voteRound.totalCast,
-                    gid
+                    gid,
+                    msg.sender
                 ))) % tieCount;
                 winner = tied[rand];
             }

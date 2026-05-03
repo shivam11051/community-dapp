@@ -3,7 +3,7 @@
 > Trustless chit funds and rotating savings groups on Ethereum. Every rule enforced by smart contracts — no middlemen, no fraud, full transparency.
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue?style=for-the-badge)](https://shivam11051.github.io/community-dapp)
-[![Contract](https://img.shields.io/badge/Contract-Sepolia%20Verified-green?style=for-the-badge)](https://sepolia.etherscan.io/address/0xf7029351b6aadafcaaa792fdcc5fe4bf46a433aa)
+[![Contract](https://img.shields.io/badge/Contract-Sepolia%20Verified-green?style=for-the-badge)](https://sepolia.etherscan.io/address/0xc4C2B43cB3e41724a55002174D1cddEbB8E294A7)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?style=for-the-badge&logo=solidity)](https://soliditylang.org)
 
@@ -31,8 +31,8 @@ Get free Sepolia ETH from: https://sepoliafaucet.com
 | Field | Value |
 |-------|-------|
 | Network | Ethereum Sepolia Testnet (Chain ID: 11155111) |
-| Address | `0xf7029351b6aadafcaaa792fdcc5fe4bf46a433aa` |
-| Etherscan | https://sepolia.etherscan.io/address/0xf7029351b6aadafcaaa792fdcc5fe4bf46a433aa |
+| Address | `0xc4C2B43cB3e41724a55002174D1cddEbB8E294A7` |
+| Etherscan | https://sepolia.etherscan.io/address/0xc4C2B43cB3e41724a55002174D1cddEbB8E294A7 |
 | Language | Solidity 0.8.20 |
 | Security | OpenZeppelin ReentrancyGuard + Pausable |
 

@@ -198,7 +198,8 @@ export default function VotingScreen({
   async function handleStartVoting() {
     try {
       await actions.startVoting(gid);
-      setTimeout(() => load(), 2000); // Reload after 2 seconds
+      eventCache.clear(); // Force fresh query of events
+      setTimeout(() => load(), 3000); // Wait for block indexing
     } catch (err) {
       console.error("Error starting voting:", err);
     }
@@ -207,7 +208,8 @@ export default function VotingScreen({
   async function handleVote(candidate) {
     try {
       await actions.castVote(gid, candidate);
-      setTimeout(() => load(), 2000);
+      eventCache.clear(); // Force fresh query of events
+      setTimeout(() => load(), 2500); // Wait for block indexing
     } catch (err) {
       console.error("Error casting vote:", err);
     }
@@ -216,7 +218,12 @@ export default function VotingScreen({
   async function handleResolve() {
     try {
       await actions.resolveVote(gid);
-      setTimeout(() => load(), 2000);
+      
+      // Clear event cache for this group to force fresh query of recent blocks
+      eventCache.clear(); // Clear all cached events - will re-query from scratch
+      
+      // Wait for transaction to be mined + indexed, then reload with fresh data
+      setTimeout(() => load(), 3000);
     } catch (err) {
       console.error("Error resolving vote:", err);
     }
@@ -477,7 +484,7 @@ export default function VotingScreen({
             ))}
           </div>
 
-          {/* Resolve button */}
+          {/* Resolve button - when voting is open and closed/complete */}
           {voteState === 1 && (timeLeft === "Closed" || totalVotes === group?.members?.length) && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 10 }}>
@@ -496,6 +503,26 @@ export default function VotingScreen({
                 disabled={txPending}
               >
                 🏆 Resolve & Select Borrower
+              </button>
+            </div>
+          )}
+
+          {/* Fallback resolve button - if votes exist but state can't be detected */}
+          {voteState === 0 && totalVotes > 0 && (
+            <div className="card">
+              <div className="card-title" style={{ marginBottom: 10 }}>
+                ⚠️ Votes Detected
+              </div>
+              <p style={{ fontSize: 13, color: "var(--text2)", marginBottom: 14 }}>
+                Found {totalVotes} votes cast. The voting window may have ended. Click below to finalize the vote and select a borrower.
+              </p>
+              <button 
+                className="btn-primary" 
+                style={{ width: "100%", background: "var(--orange)" }} 
+                onClick={handleResolve} 
+                disabled={txPending}
+              >
+                🏆 Finalize Vote & Select Borrower
               </button>
             </div>
           )}

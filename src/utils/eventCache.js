@@ -20,6 +20,10 @@ class EventCache {
     constructor() {
       // Key = event name, Value = { block: number, timestamp: number }
       this.lastBlock = {};
+      this._blocks = {}; // Exposed for debugging
+      
+      // Track which event types have been queried at least once
+      this._queried = {};
       
       // Never query more than this many blocks at once (RPC provider limits)
       this.BLOCK_RANGE = 5000;
@@ -29,6 +33,13 @@ class EventCache {
       
       // Track reorg events for debugging
       this.reorgEvents = [];
+    }
+    
+    /**
+     * Check if an event has been queried before (first load vs. subsequent)
+     */
+    hasBeenQueried(eventName) {
+      return !!this._queried[eventName];
     }
   
     /**
@@ -52,6 +63,10 @@ class EventCache {
         block: blockNumber,
         timestamp: Date.now(),
       };
+      this._blocks = this._blocks || {}; // Ensure object exists
+      this._blocks[eventName] = blockNumber; // For debugging
+      this._queried = this._queried || {}; // Ensure object exists
+      this._queried[eventName] = true; // Mark as queried
       console.log(`📌 Cached: ${eventName} = block ${blockNumber}`);
     }
   
@@ -59,15 +74,8 @@ class EventCache {
      * Calculate safe block range for a query
      * Handles chain reorgs by detecting when lastQueried > currentBlock
      * 
-     * Example (normal):
-     * - currentBlock = 18,505,000
-     * - lastQueried = 18,500,000
-     * - Result: { fromBlock: 18,500,001, toBlock: 18,505,000 }
-     * 
-     * Example (reorg detected):
-     * - currentBlock = 18,500,100  (went backward!)
-     * - lastQueried = 18,503,000
-     * - Result: { fromBlock: 18,499,972, toBlock: 18,500,100 } (backtracked 128 blocks)
+     * On FIRST load of an event type: queries back 500 blocks to catch historical events
+     * On SUBSEQUENT loads: uses smart caching to only query new blocks
      * 
      * @param {number} currentBlock - Latest block number
      * @param {string} eventName - Event to query
@@ -93,13 +101,23 @@ class EventCache {
         
         // Clear this event's cache to restart fresh
         delete this.lastBlock[eventName];
+        delete this._queried[eventName];
         
         // Return a safe range that includes the reorg buffer
         const safeFromBlock = Math.max(0, currentBlock - this.SAFE_REORG_BUFFER);
         return { fromBlock: safeFromBlock, toBlock: currentBlock };
       }
       
-      // ─── NORMAL FLOW ───────────────────────────────────────────
+      // ─── FIRST LOAD vs. SUBSEQUENT LOAD ─────────────────────
+      // On first query of this event type, go back 500 blocks to catch any recent events
+      // On subsequent queries, use normal caching strategy
+      if (!this.hasBeenQueried(eventName)) {
+        console.log(`🔍 [FIRST LOAD] ${eventName}: Querying back 500 blocks`);
+        const fromBlock = Math.max(0, currentBlock - 500);
+        return { fromBlock, toBlock: currentBlock };
+      }
+      
+      // ─── NORMAL FLOW (SUBSEQUENT LOADS) ────────────────────────
       // Start from (lastQueried + 1), but don't go back more than BLOCK_RANGE
       const fromBlock = Math.max(
         lastQueried + 1,
@@ -122,11 +140,15 @@ class EventCache {
     /**
      * Clear all cached data
      * (Used for testing & debugging)
+     * When cleared, the next load will be treated as a "first load"
+     * and will query back 500 blocks to catch any events
      */
     clear() {
       this.lastBlock = {};
+      this._blocks = {};
+      this._queried = {}; // Reset first-load tracking
       this.reorgEvents = [];
-      console.log("🗑️ Event cache cleared");
+      console.log("🗑️ Event cache cleared - next load will query back 500 blocks");
     }
   }
   

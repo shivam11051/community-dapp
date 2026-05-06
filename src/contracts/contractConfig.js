@@ -30,7 +30,7 @@
  * and transaction revert messages for debugging failed transactions.
  */
 
-export const ADDRESS = "0xE8502c43885e05e3dD38948BB9caD2fAB01Dd2a5";
+export const ADDRESS = "0xEe0Fd704890980740A3066fC5dDD7c127f4d8fdD6";
 
 export const ABI = [
 
